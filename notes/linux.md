@@ -13,6 +13,7 @@
     - [Switch User](#switch-user)
   - [USB Devices](#usb-devices)
     - [Test USB Key](#test-usb-key)
+  - [Fonts](#fonts)
 
 ## System Information
 
@@ -261,3 +262,38 @@ Unmount the USB key and safely remove it from the system:
 umount /mnt/usb
 eject /dev/sdc
 ```
+
+## Fonts
+
+**Download and Install Fonts**
+
+1. **Download the Font Archive**:
+
+   ```bash
+   wget https://path/to/font/archive.tar.gz
+   ```
+
+2. **Extract the Font Files**:
+
+   ```bash
+   tar -xzvf font-archive.tar.gz
+   ```
+
+3. **Copy the Font Files to the Local Fonts Directory**:
+   ```bash
+   cp -v *.ttf ~/.local/share/fonts/
+   ```
+
+**Update the Font Cache**
+
+**Force a Reload of the Installed Font Cache**:
+
+```bash
+sudo su -
+fc-cache -fv
+fc-cache -frv
+```
+
+- **`-f`**: Force re-generation of apparently up-to-date cache files, overriding the timestamp checking.
+- **`-r`**: Erase all existing cache files and rescan.
+- **`-v`**: Display status information while busy.
