@@ -11,6 +11,9 @@
     - [User Information](#user-information)
     - [Super User Management](#super-user-management)
     - [Switch User](#switch-user)
+  - [System Management](#system-management)
+    - [Change password of a tar/openssl archive](#change-password-of-a-taropenssl-archive)
+    - [Verify two possibly identical folders recursively](#verify-two-possibly-identical-folders-recursively)
   - [USB Devices](#usb-devices)
     - [Test USB Key](#test-usb-key)
   - [Fonts](#fonts)
@@ -147,6 +150,168 @@ su - postgres
 ```
 
 This command switches to the `postgres` user with root privileges.
+
+## System Management
+
+**Ensure hostname or add alias**
+
+Set or update the hostname for your server.
+
+```bash
+nano /etc/hosts
+# Add the hostname alias:
+# 127.0.1.1 local.servername.domain.com
+
+nano /etc/hostname
+# Set the main hostname:
+# 127.0.1.1 servername.domain.com servername
+
+hostnamectl set-hostname servername.domain.com
+```
+
+**Tar backup for a large number of small files**
+
+These commands create backups using `tar` and transfer them securely over SSH.
+
+Create a tar archive and transfer it to a remote server:
+
+```bash
+tar -c /path/to/dir | ssh fabrice@servername.domain.com 'tar -xvf - -C /absolute/path/to/remotedir'
+```
+
+Compress and transfer a folder, then store it as a .tar.gz file:
+
+```bash
+tar zcvf - /folder | ssh fabrice@servername.domain.com "cat > /backup/folder.tar.gz"
+```
+
+Transfer a compressed .tar.gz file and extract it on the remote server:
+
+```bash
+cat folder.tar.gz | ssh fabrice@servername.domain.com "tar zxvf -"
+```
+
+Alternative method: change directory on the remote server before extracting:
+
+```bash
+cat folder.tar.gz | ssh fabrice@servername.domain.com "cd /path/to/dest/; tar zxvf -"
+```
+
+**List time zones**
+
+Use `timedatectl` to list available time zones or check the current settings.
+
+```bash
+timedatectl
+timedatectl list-timezones
+```
+
+**Configure time zone**
+
+Configure the time zone using `timedatectl` or by manually setting a symbolic link to `/etc/localtime`.
+
+```bash
+timedatectl set-timezone "America/Toronto"
+```
+
+Alternatively, manually set the time zone by linking the correct file:
+
+```bash
+mv /etc/localtime /etc/localtime-old
+ln -s /usr/share/zoneinfo/America/Toronto /etc/localtime
+```
+
+**Find a specific service**
+
+Search for a specific service running on your system.
+
+```bash
+systemctl list-units --type=service | grep php
+```
+
+### Change password of a tar/openssl archive
+
+**Decrypt the archive**
+
+To decrypt an `openssl`-encrypted archive using a password stored in a file:
+
+1. **Store your password in this file.**
+   ```bash
+   nano $HOME/xyz001.txt
+   ```
+2. **Decrypt the archive**  
+   Decrypt the archive using the password stored in xyz001.txt.
+
+   ```bash
+   openssl aes-256-cbc -d -pbkdf2 -in servername-backup.tar.gz -out servername-backup.tar -pass file:$HOME/xyz001.txt
+   ```
+
+3. **Re-encrypt the archive with a new password**
+
+   ```bash
+   nano $HOME/xyz001.txt
+   openssl aes-256-cbc -e -pbkdf2 -in servername-backup.tar -out servername-backup-new.tar.gz -pass file:$HOME/xyz001.txt
+   rm $HOME/xyz001.txt
+   ```
+
+**Decode / Extract**
+
+To decrypt and extract the contents of an encrypted archive directly into a directory:
+
+```bash
+nano $HOME/xyz001.txt
+openssl aes-256-cbc -d -pbkdf2 -in servername-backup.tar.gz -pass file:xyz001.txt | tar xz -C .
+rm $HOME/xyz001.txt
+```
+
+### Verify two possibly identical folders recursively
+
+**With `diff`**
+
+Check for differences between two directories, comparing all files recursively:
+
+```bash
+diff -r servername-files/data/servername-repositories/ servername-repositories/
+```
+
+Outputs any differences found between the two directories.
+
+**With `rsync`**
+
+Use `rsync` to show differences without copying any data:
+
+```bash
+rsync -avn servername-files/data/servername-repositories/ servername-repositories/
+```
+
+- The `-n` flag means this is a dry run, which won’t make any changes.
+
+**With `cmp`**
+
+This script compares files in two directories and identifies any differences between matching file names.
+
+```bash
+#!/bin/bash
+
+dir1="servername-files/data/servername-repositories/"
+dir2="servername-repositories/"
+
+# Check if both directories exist before proceeding.
+if [ ! -d "$dir1" ] || [ ! -d "$dir2" ]; then
+    echo "One or both directories do not exist."
+    exit 1
+fi
+
+# Iterate through all files in dir1 and compare with corresponding files in dir2.
+for file1 in $(find "$dir1" -type f); do
+    file2="${file1/$dir1/$dir2}"
+    if [ ! -f "$file2" ]; then
+        echo "File $file2 not found."
+    else
+        cmp --silent "$file1" "$file2" || echo "Files $file1 and $file2 differ."
+    fi
+done
+```
 
 ## USB Devices
 
