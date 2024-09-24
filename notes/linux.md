@@ -16,6 +16,9 @@
     - [Verify two possibly identical folders recursively](#verify-two-possibly-identical-folders-recursively)
   - [USB Devices](#usb-devices)
     - [Test USB Key](#test-usb-key)
+  - [Diagnosis](#diagnosis)
+    - [Debian Upgrade Issues](#debian-upgrade-issues)
+    - [Wayland Issues](#wayland-issues)
   - [Fonts](#fonts)
 
 ## System Information
@@ -426,6 +429,59 @@ Unmount the USB key and safely remove it from the system:
 ```bash
 umount /mnt/usb
 eject /dev/sdc
+```
+
+**Switching two USB keys**
+
+The following commands copy data between two USB drives, format one of them, and restore the data.
+
+```bash
+cp -r /media/fabrice/465A-759B "/tmp/Michael Allison"
+umount /dev/sdc1
+mkfs.vfat /dev/sdc1
+
+umount /dev/sdc1
+dd if=/dev/sdc of=/tmp/usb_image.img bs=4M status=progress
+mkfs.vfat /dev/sdc1
+
+cp -r "/tmp/Michael Allison" /media/fabrice/D67D-ADF8
+umount /dev/sdc1
+
+dd if=/tmp/usb_image.img of=/dev/sdc bs=4M status=progress
+sync
+```
+
+## Diagnosis
+
+### Debian Upgrade Issues
+
+**Apt Logs**
+
+View the APT logs to check for package installation and updates history:
+
+```bash
+less /var/log/apt/history.log
+```
+
+### Wayland Issues
+
+**System Logs**
+
+Examine system logs and hardware information for troubleshooting Wayland issues:
+
+```bash
+lspci -k | grep -A 3 -E "(VGA|3D)"
+lsmod | grep -i "drm\|gpu\|nouveau\|amdgpu\|i915"
+glxinfo | grep "OpenGL version"
+```
+
+**GPU Information**
+
+Search the system logs for any errors or warnings related to GPU and Wayland:
+
+```bash
+journalctl -b | grep -i "drm\|gpu\|display\|wayland\|monitor"
+journalctl -b | grep -i "gnome-shell"
 ```
 
 ## Fonts
