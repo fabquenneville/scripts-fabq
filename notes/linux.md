@@ -154,6 +154,25 @@ su - postgres
 
 This command switches to the `postgres` user with root privileges.
 
+**Run command as specific user**
+
+```bash
+sudo -u www-data somecommand and arguments
+```
+
+**Change shell of a user**
+
+```bash
+chsh -s /bin/bash www-data
+chsh -s /usr/sbin/nologin www-data
+```
+
+**Change user with specific shell**
+
+```bash
+sudo -u www-data bash
+```
+
 ## System Management
 
 **Ensure hostname or add alias**
@@ -501,8 +520,23 @@ journalctl -b | grep -i "gnome-shell"
    ```
 
 3. **Copy the Font Files to the Local Fonts Directory**:
+
+   **Local font directory**
+
    ```bash
    cp -v *.ttf ~/.local/share/fonts/
+   ```
+
+   **Global font directory - Package manager managed**
+
+   ```bash
+   cp -v *.ttf /usr/share/fonts
+   ```
+
+   **Global font directory - User managed**
+
+   ```bash
+   cp -v *.ttf /usr/local/share/fonts
    ```
 
 **Update the Font Cache**
