@@ -63,6 +63,34 @@ ssh-copy-id -i /home/fabrice/.ssh/fabquenneville fabrice@servername.fabq.ca
 - `ssh-copy-id -i /home/fabrice/.ssh/fabquenneville`: This specifies which private key to use for authentication when copying the public key.
 - `root@192.168.1.100` and `fabrice@servername.fabq.ca`: These commands install the public key on the respective remote servers, allowing for secure, passwordless access.
 
+**Install the public key on the remote server for passwordless authentication manually**
+This process is useful when ssh-copy-id is unavailable, or when you want more granular control over the manual setup of passwordless SSH authentication. The ssh-copy-id tool automatically installs your public key on the remote machine, but if you prefer or need to do it manually, these are the steps:
+
+1. Create the .ssh directory if it doesn't exist and set proper permissions
+
+```bash
+mkdir -p /home/fabrice/.ssh
+chmod 700 /home/fabrice/.ssh
+```
+
+2. Open the authorized_keys file in an editor and paste the public key (usually from ~/.ssh/id_rsa.pub on the local machine)
+
+```bash
+nano /home/fabrice/.ssh/authorized_keys
+```
+
+3. Set the correct permissions for the authorized_keys file
+
+```bash
+chmod 600 /home/fabrice/.ssh/authorized_keys
+```
+
+4. Ensure the ownership of the .ssh directory and its contents is set to the correct user
+
+```bash
+chown -R fabrice:fabrice /home/fabrice/.ssh
+```
+
 ## Verbose
 
 - Use the 'ssh' command with the '-v' option to enable verbose mode, which provides detailed information about the connection process.
