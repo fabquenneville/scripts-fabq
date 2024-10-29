@@ -76,6 +76,20 @@ This command will display the number of lines in the specified file.
 
 ### User Information
 
+**Add users**
+
+This variation of the adduser command uses the --gecos option to pre-fill the user's information (Full name, Room number, Work Phone, Home Phone, and Email) non-interactively, allowing you to automate user creation with predefined details.
+
+```bash
+adduser --gecos "Fabrice Quenneville,,,fabrice@fabq.ca" fabrice
+```
+
+This variation of the adduser command creates a system user named "aptly" with a Bash shell, no password login (--disabled-password), a specified home directory (/home/aptly), and adds the user to a new group, while using the --gecos option to set the full name as "Aptly repository".
+
+```bash
+adduser --system --shell /bin/bash --gecos 'Aptly repository' --group --disabled-password --home /home/aptly aptly
+```
+
 **List Users**
 
 To list all users from the `/etc/passwd` file, use:
