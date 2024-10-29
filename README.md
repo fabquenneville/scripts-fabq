@@ -22,7 +22,9 @@ This repository is structured into several key directories:
   - `linux.md`: General Linux tips.
   - `pip packaging.md`: Packaging Python projects with pip.
 
-- **pages/**: Templates for error pages. These are provided as inspiration and should not be used as-is.
+- **pages/other/**: Templates for other pages, such as the homepage of my Debian package repository. These are provided as inspiration and should not be used as-is.
+
+- **pages/errors/**: Templates for error pages. These are provided as inspiration and should not be used as-is.
 
 - **requests/**: Similar to the `pages/` directory, this contains error pages structured as requests for software like HAProxy.
 

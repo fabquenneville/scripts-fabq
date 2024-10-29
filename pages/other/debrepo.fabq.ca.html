@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Explore Fabrice Quenneville's reliable Debian/Ubuntu repository for stable, trusted software packages. Simple installation instructions and secure repository management."
+    />
+    <meta
+      name="keywords"
+      content="Fabrice Quenneville, Debian repository, Ubuntu repository, secure apt repository, software packages, Debian packages, Ubuntu packages, open-source software, apt-key, apt keyrings, software installation, mediacurator"
+    />
+    <meta http-equiv="content-language" content="en" />
+    <meta name="author" content="Fabrice Quenneville" />
+    <meta
+      property="og:title"
+      content="Fabrice Quenneville's Debian/Ubuntu Repository"
+    />
+    <meta
+      property="og:description"
+      content="Stable and secure packages for Debian and Ubuntu. Follow straightforward setup instructions to add Fabrice Quenneville's software repository to your system."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://debrepo.fabq.ca/" />
+    <meta
+      property="og:image"
+      content="/images/icons/android-chrome-192x192.webp"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Fabrice Quenneville's Repository" />
+    <meta
+      name="twitter:description"
+      content="Find trusted software packages for Debian and Ubuntu with easy installation from Fabrice Quenneville's repository."
+    />
+    <meta
+      name="twitter:image"
+      content="/images/icons/android-chrome-192x192.webp"
+    />
+    <meta name="theme-color" content="#343a40" />
+
+    <title>Welcome to Fabrice Quenneville's Repository</title>
+
+    <!-- favicons -->
+    <link
+      rel="preload"
+      href="/images/icons/android-chrome-192x192.webp"
+      as="image"
+    />
+    <link
+      rel="apple-touch-icon"
+      type="image/webp"
+      sizes="180x180"
+      href="/images/icons/apple-touch-icon.webp"
+    />
+    <link
+      rel="icon"
+      type="image/webp"
+      sizes="32x32"
+      href="/images/icons/favicon-32x32.webp"
+    />
+    <link
+      rel="icon"
+      type="image/webp"
+      sizes="16x16"
+      href="/images/icons/favicon-16x16.webp"
+    />
+    <link rel="manifest" href="/images/icons/site.webmanifest" />
+
+    <!-- NoScript Handling -->
+    <noscript>
+      <style>
+        body {
+          display: none;
+          text-align: center;
+          background-color: #f8f9fa;
+          color: #343a40;
+        }
+        .noscript-message {
+          display: block;
+          margin-top: 50px;
+          font-size: 1.5em;
+        }
+      </style>
+      <p class="noscript-message">
+        Please enable JavaScript to view this website correctly.
+      </p>
+    </noscript>
+
+    <!-- Fonts and Styles -->
+    <style>
+      html,
+      body {
+        height: 100%; /* Ensure html and body take full height */
+        margin: 0; /* Remove default margin */
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        color: #343a40;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      header {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: start;
+        align-items: center;
+        padding: 10px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background-color: #f8f9fa;
+        p {
+          max-width: 1024px;
+        }
+      }
+
+      header {
+        margin-bottom: 10px; /* Add margin to separate header from content */
+      }
+
+      h1 {
+        font-size: 2.5em;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+      }
+
+      p {
+        font-size: 1.2em;
+        margin-bottom: 20px;
+      }
+
+      .logo {
+        height: 64px;
+        margin-right: 10px;
+      }
+
+      .instructions {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        margin: 20px;
+        text-align: left;
+        width: 90%;
+        max-width: 1024px;
+      }
+
+      .instructions code {
+        display: block;
+        background-color: #f1f1f1;
+        padding: 10px;
+        border-radius: 5px;
+        color: #d63384;
+        overflow-x: auto;
+        font-size: 1em;
+      }
+
+      .footer {
+        font-size: 0.9em;
+        color: #6c757d;
+        background-color: #ffffff;
+        padding: 10px 10px;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      @media (max-width: 600px) {
+        .logo {
+          margin-bottom: 10px;
+        }
+        header h1 {
+          font-size: 2em;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        p {
+          font-size: 1em;
+        }
+      }
+    </style>
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "WebSite",
+        "url": "https://debrepo.fabq.ca/",
+        "name": "Fabrice Quenneville's Debian/Ubuntu Repository",
+        "author": {
+          "@type": "Person",
+          "name": "Fabrice Quenneville"
+        },
+        "description": "Explore Fabrice Quenneville's reliable Debian/Ubuntu repository for stable, trusted software packages.",
+        "keywords": "Debian, Ubuntu, software repository, secure packages"
+      }
+    </script>
+  </head>
+  <body>
+    <header class="header">
+      <h1>
+        <img
+          src="/images/icons/android-chrome-192x192.webp"
+          alt="logo"
+          class="logo"
+        />
+        Welcome to Fabrice Quenneville's Repository
+      </h1>
+    </header>
+    <main class="container">
+      <p>
+        This repository provides stable packages for Fabrice Quenneville's
+        applications on Debian. Follow the instructions below to add this
+        repository to your system's sources list and install packages securely.
+      </p>
+      <div class="instructions">
+        <h2>Repository Information</h2>
+        <p>To add this repository to your system:</p>
+        <code>
+          echo "deb [signed-by=/etc/apt/keyrings/fabq-repo.asc]
+          https://debrepo.fabq.ca/ stable main" | sudo tee
+          /etc/apt/sources.list.d/fabq.list
+        </code>
+        <p>First, create the keyring directory (if not already present):</p>
+        <code>
+          sudo mkdir -p /etc/apt/keyrings && sudo chmod 755 /etc/apt/keyrings
+        </code>
+        <p>Then download and save the repository key:</p>
+        <code>
+          wget -O /etc/apt/keyrings/fabq-repo.asc
+          https://debrepo.fabq.ca/debrepo.fabq.ca-public-key.asc
+        </code>
+        <p>Finally, update and install packages:</p>
+        <code> sudo apt update && sudo apt install [package-name]</code>
+      </div>
+    </main>
+    <footer class="footer">
+      <p>
+        &copy; 2024
+        <a href="https://fabq.ca" alt="Fabrice Quenneville's homepage"
+          >Fabrice Quenneville</a
+        >'s Repository. Serving stable and reliable packages.
+      </p>
+    </footer>
+  </body>
+</html>
