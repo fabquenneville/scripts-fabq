@@ -19,14 +19,19 @@ This repository is structured into several key directories:
   - `ssh.md`: Secure Shell (SSH) configuration and tips.
   - `btrfs.md`: Btrfs filesystem configuration and tips.
   - `debian packaging.md`: Debian packaging guidelines.
+  - `debian_setup_aptly.md`: Comprehensive guide for installing Aptly on Debian.
   - `linux.md`: General Linux tips.
   - `pip packaging.md`: Packaging Python projects with pip.
 
 - **pages/other/**: Templates for other pages, such as the homepage of my Debian package repository. These are provided as inspiration and should not be used as-is.
 
+  - `debrepo.fabq.ca.html`: This file serves as the homepage for my Debian package repository. It provides the instructions to add the repository to user's system's sources list and install packages securely.
+
 - **pages/errors/**: Templates for error pages. These are provided as inspiration and should not be used as-is.
 
-- **requests/**: Similar to the `pages/` directory, this contains error pages structured as requests for software like HAProxy.
+- **pages/static/**: This directory contains static images used throughout the pages in the repository. These images are copyrighted to me and may be used to enhance the visual appeal of the documentation and guides.
+
+- **requests/errors/**: Similar to the `pages/errors/` directory, this contains error pages structured as requests for software like HAProxy.
 
 ## 📖 Documentation
 
