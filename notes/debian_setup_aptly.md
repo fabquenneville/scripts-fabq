@@ -343,7 +343,7 @@ chown -R aptly:aptly /home/aptly/.ssh/
     **Adding Packages**
 
     ```bash
-    sudo su -l aptly
+    sudo -iu aptly
     mkdir /home/aptly/packages/
     ```
 
@@ -370,6 +370,14 @@ chown -R aptly:aptly /home/aptly/.ssh/
     ```bash
     scp ~/<hostname-internet>.private-key.asc aptly@<hostname-internet>:/home/aptly/
     rm ~/<hostname-internet>.private-key.asc
+    ```
+
+    **Register keys with public keyservers**
+
+    ```bash
+    gpg --send-keys <gpg-repository-key-id>
+    gpg --keyserver hkp://keyserver.ubuntu.com --send-keys <gpg-repository-key-id>
+    gpg --keyserver hkp://pgp.mit.edu --send-keys <gpg-repository-key-id>
     ```
 
     **Import GPG Key**
