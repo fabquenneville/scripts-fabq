@@ -7,6 +7,7 @@
   - [System Information](#system-information)
     - [Hardware Information](#hardware-information)
     - [Software Information](#software-information)
+- [Commands to Get Information About Linux Version, Kernel Version, and Release](#commands-to-get-information-about-linux-version-kernel-version-and-release)
   - [User Management](#user-management)
     - [User Information](#user-information)
     - [Super User Management](#super-user-management)
@@ -41,6 +42,17 @@ To gather detailed information about your hardware, use the following commands:
   - `dmidecode -t bios` for BIOS information
 
 ### Software Information
+
+**Finding information on the Linux distribution**
+
+# Commands to Get Information About Linux Version, Kernel Version, and Release
+
+- **`lsb_release -a`**: Displays detailed information about the Linux distribution, including the distributor ID, description, release number, and codename.
+- **`cat /etc/debian_version`**: Displays the version of the Debian distribution if you're running a Debian-based system (like Ubuntu).
+- **`cat /etc/os-release`**: Displays information about the operating system, such as the name, version, and ID of the distribution.
+- **`cat /etc/*release`**: Searches for any files in the `/etc/` directory that contain the word `release` and displays their contents. This typically includes more detailed distribution information.
+- **`cat /etc/*version`**: Similar to `cat /etc/*release`, but it looks for files containing the word `version`. It can provide additional version-related details.
+- **`hostnamectl`**: Displays system information related to the hostname and other metadata about the system. This may include the operating system, kernel version, and architecture.
 
 **Finding Path to Binary**
 
