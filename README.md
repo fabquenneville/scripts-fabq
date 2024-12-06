@@ -13,15 +13,15 @@ This repository is structured into several key directories:
 - **notes/**: A collection of markdown files containing notes on various topics, including:
 
   - `brother.md`: Information about Brother printers on Linux.
-  - `chrome-driver.md`: Notes on ChromeDriver setup and usage on Linux.
-  - `dns.md`: DNS configuration and troubleshooting.
-  - `pdftk.md`: PDF Toolkit usage.
-  - `ssh.md`: Secure Shell (SSH) configuration and tips.
   - `btrfs.md`: Btrfs filesystem configuration and tips.
+  - `chrome-driver.md`: Notes on ChromeDriver setup and usage on Linux.
   - `debian packaging.md`: Debian packaging guidelines.
-  - `debian_setup_aptly.md`: Comprehensive guide for installing Aptly on Debian.
+  - `dns.md`: DNS configuration and troubleshooting.
   - `linux.md`: General Linux tips.
+  - `pdf.md`: PDF manipulation with Linux command line.
+  - `pdftk.md`: PDF Toolkit usage.
   - `pip packaging.md`: Packaging Python projects with pip.
+  - `ssh.md`: Secure Shell (SSH) configuration and tips.
 
 - **pages/other/**: Templates for other pages, such as the homepage of my Debian package repository. These are provided as inspiration and should not be used as-is.
 
@@ -32,6 +32,10 @@ This repository is structured into several key directories:
 - **pages/static/**: This directory contains static images used throughout the pages in the repository. These images are copyrighted to me and may be used to enhance the visual appeal of the documentation and guides.
 
 - **requests/errors/**: Similar to the `pages/errors/` directory, this contains error pages structured as requests for software like HAProxy.
+
+- **setups/**: A collection of markdown files containing notes on configuring servers, including:
+  - `debian_setup_aptly.md`: Comprehensive guide for installing Aptly on Debian.
+  - `debian_setup_gitea.md`: Comprehensive guide for installing Gitea on Debian.
 
 ## 📖 Documentation
 
