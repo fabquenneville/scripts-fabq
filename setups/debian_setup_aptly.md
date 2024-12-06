@@ -120,7 +120,8 @@ By following these practices, you will help maintain the security and stability 
 
 - **Operating System**: Debian
 - **Web Server**: Nginx
-- **Other**: Git, sudo, GnuPG, WireGuard, UFW
+- **Security**: GnuPG, WireGuard, UFW
+- **Other**: Git, sudo
 
 ### Paths
 
@@ -176,7 +177,7 @@ ssh <username-hypervisor>@<hostname-hypervisor> "pct migrate 100 hv2"
 
 ### SSH Connection
 
-**Test SSH Keys**
+**Connection with specific keys**
 
 ```bash
 ssh -i <ssh-key-client> root@<hostname-intranet>
@@ -273,7 +274,9 @@ chown -R aptly:aptly /home/aptly/.ssh/
 
 8. **Secure SSH**
 
-   Edit `/etc/ssh/sshd_config`:
+   ```bash
+   nano /etc/ssh/sshd_config
+   ```
 
    ```ini
    PermitRootLogin no
@@ -281,7 +284,7 @@ chown -R aptly:aptly /home/aptly/.ssh/
    ChallengeResponseAuthentication no
    ```
 
-   Restart SSH:
+   **Restart SSH**
 
    ```bash
    systemctl restart ssh
