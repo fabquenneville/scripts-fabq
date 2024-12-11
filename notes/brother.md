@@ -69,3 +69,17 @@ bash linux-brprinter-installer-*.*.*-* DCP-L2520DW
    - **For Network Users**: Choose `Y` (Yes) and provide the DeviceURI number
 
    The installation process may take some time. Wait until it completes.
+
+**Optional**
+
+If the automatic installer does not work, it is possible to manually set the printer to a fixed IP address with the following commands:
+
+```bash
+# For models compatible with brsaneconfig4
+brsaneconfig4 -a name=DCP-L2520DW model=DCP-L2520DW ip=192.168.1.100
+
+# For models compatible with brsaneconfig3
+brsaneconfig3 -a name=MFC-9010CN model=MFC-9010CN ip=192.168.1.100
+```
+
+**Note**: Use brsaneconfig4 or brsaneconfig3 depending on the model of your Brother printer/scanner. Refer to the documentation to determine compatibility.
