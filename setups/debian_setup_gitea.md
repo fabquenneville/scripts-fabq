@@ -58,10 +58,11 @@ Replace the placeholders below with the appropriate values for your setup:
 - **Server Configuration**
 
   - Server IP address: `<server-ip-address>` (e.g., 192.168.1.100)
-  - Hostname - Intranet: `<hostname-intranet>` (e.g., gitea-server)
+  - Hostname - Intranet: `<hostname-intranet>` (e.g., gitea-server.domain.com)
   - Hostname - Internet: `<hostname-internet>` (e.g., gitea.domain.com)
-  - Hostname - Hypervisor: `<hostname-hypervisor>` (e.g., proxmox-hypervisor)
-  - Hostname - Hypervisor NAS: `<hostname-hypervisor-nas>` (e.g., nas-server)
+  - Hostname - Hypervisor: `<hostname-hypervisor>` (e.g., proxmox-hypervisor.domain.com)
+  - Hostname - Hypervisor NAS: `<hostname-hypervisor-nas>` (e.g., nas-server.domain.com)
+  - Name - Hypervisor NAS: `<name-hypervisor-nas>` (e.g., nas-server)
 
 - **SSH Keys**
 
@@ -125,13 +126,13 @@ ssh <username>@<hostname-hypervisor-nas> "ls /mnt/proxmox/template/cache/"
 **Create the container**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "pct create 100 stor2:vztmpl/debian-12-upgraded_12.5_amd64.tar.zst --hostname <hostname-intranet> --cores 2 --memory 2048 --swap 2048 --net0 name=net0,bridge=vmbr0,ip=dhcp,firewall=1 --rootfs stor2:250 --unprivileged 1 --features nesting=1 --ssh-public-keys <ssh-key-proxmox> --start 1"
+ssh <username-hypervisor>@<hostname-hypervisor> "pct create 100 <name-hypervisor-nas>:vztmpl/debian-12-upgraded_12.5_amd64.tar.zst --hostname <hostname-intranet> --cores 2 --memory 2048 --swap 2048 --net0 name=net0,bridge=vmbr0,ip=dhcp,firewall=1 --rootfs <name-hypervisor-nas>:250 --unprivileged 1 --features nesting=1 --ssh-public-keys <ssh-key-proxmox> --start 1"
 ```
 
 **Backup**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage stor2 --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
+ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
 ```
 
 **Set the state of the Proxmox HA Manager for Container 100**
@@ -207,7 +208,7 @@ cat /home/<username>/.ssh/<username>.pub >> /home/<username>/.ssh/authorized_key
 2. **Backup before starting**
 
    ```bash
-   ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage stor2 --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
+   ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
    ```
 
 3. **Install Required Dependencies**
@@ -503,7 +504,7 @@ cat /home/<username>/.ssh/<username>.pub >> /home/<username>/.ssh/authorized_key
 
     ```bash
     ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:100 --state stopped"
-    ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage stor2 --note \"$(date +'%Y-%m-%d %H:%M') Backup post installation\""
+    ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup post installation\""
     ```
 
 20. **Start the server**
