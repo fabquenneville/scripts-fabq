@@ -10,6 +10,8 @@
   - [Recovery](#recovery)
   - [Drive Manipulation](#drive-manipulation)
     - [Replace Drives](#replace-drives)
+  - [Filesystem Manipulation](#filesystem-manipulation)
+    - [Upgrading Btrfs block group cache to V2](#upgrading-btrfs-block-group-cache-to-v2)
   - [Balances](#balances)
   - [Scrub](#scrub)
   - [Snapshots](#snapshots)
@@ -39,6 +41,20 @@ To get detailed information and serial number of a specific drive:
 
 ```bash
 smartctl -i /dev/sdc
+```
+
+**Find the Device Path from UUID**
+
+Using lsblk:
+
+```bash
+lsblk -o NAME,UUID,MOUNTPOINT
+```
+
+Using blkid:
+
+```bash
+blkid | grep <UUID>
 ```
 
 ## Information on Filesystem
@@ -115,6 +131,22 @@ To change the default subvolume if a non-standard one is set:
 ```bash
 btrfs subvol set-default 257 /mnt/tmp/
 ```
+
+**Verify Current Cache Version**
+
+To check if your filesystem is using cache V1 by device:
+
+```bash
+btrfs inspect-internal dump-super -f /dev/<device> | grep cache_generation
+```
+
+To check if your filesystem is using cache V1 by UUID:
+
+```bash
+btrfs inspect-internal dump-super -f $(blkid -U <UUID>) | grep cache_generation
+```
+
+- If cache_generation is present, it indicates cache V1 is in use. If it's absent, the filesystem is already using V2.
 
 ## Backup Procedures
 
@@ -318,6 +350,70 @@ btrfs replace status -i /mnt/media
 - The `btrfs replace` command allows you to replace a faulty or underperforming drive without unmounting the filesystem, making it ideal for live systems.
 - It can be used for upgrading storage by replacing smaller drives with larger ones, or for replacing failing drives.
 - Ensure that the target drive has enough space to accommodate the data from the source drive.
+
+## Filesystem Manipulation
+
+### Upgrading Btrfs block group cache to V2
+
+**From a running system non-root filesystems**
+
+```bash
+mount -o remount,clear_cache,space_cache=v2 /mnt/<mount-point>
+```
+
+**From a running system on root**
+
+Check if your filesystem is using cache V1:
+
+```bash
+btrfs inspect-internal dump-super -f /dev/<device> | grep cache_generation
+```
+
+Enable Cache V2
+
+```bash
+nano /etc/default/grub
+# Locate the line starting with GRUB_CMDLINE_LINUX_DEFAULT or GRUB_CMDLINE_LINUX and add the following options:
+rootflags=clear_cache,space_cache=v2
+```
+
+Example:
+
+```bash
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash rootflags=clear_cache,space_cache=v2"
+```
+
+```bash
+update-grub
+reboot
+```
+
+Verify the Change
+
+```bash
+btrfs inspect-internal dump-super -f /dev/<device> | grep cache_generation
+```
+
+Remove `clear_cache` Option
+
+```bash
+nano /etc/default/grub
+# Remove clear_cache from the rootflags.
+update-grub
+```
+
+**From a live system**
+
+```bash
+apt update
+apt install btrfs-progs
+lsblk -o NAME,UUID
+blkid
+mount -o clear_cache,space_cache=v2 /dev/disk/by-uuid/<UUID> /mnt
+btrfs inspect-internal dump-super -f /dev/disk/by-uuid/<UUID> | grep cache_generation
+umount /mnt
+
+```
 
 ## Balances
 
