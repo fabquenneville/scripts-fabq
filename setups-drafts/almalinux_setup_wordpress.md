@@ -456,11 +456,23 @@ ssh-copy-id -i <ssh-key-client> <username>@<hostname-intranet>
     setsebool -P httpd_can_network_connect true
     ```
 
-17. **Configure Wordpress**
+17. **Allow Override**
+
+    ```bash
+    nano /etc/httpd/conf/httpd.conf
+    ```
+
+    Allow Overrides on `/var/www` and `/var/www/html`:
+
+    ```apache
+    AllowOverride All
+    ```
+
+18. **Configure Wordpress**
 
     Now, visit `http://<hostname-intranet>` to follow the wordpress configuration.
 
-18. **Configure WireGuard**
+19. **Configure WireGuard**
 
     ```bash
     nano /etc/wireguard/proxy-lan.conf
@@ -468,14 +480,14 @@ ssh-copy-id -i <ssh-key-client> <username>@<hostname-intranet>
     wg show
     ```
 
-19. **Back-up post installation**
+20. **Back-up post installation**
 
     ```bash
     ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:<container-id> --state stopped"
     ssh <username-hypervisor>@<hostname-hypervisor> "vzdump <container-id> --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup post installation\""
     ```
 
-20. **Start the server**
+21. **Start the server**
 
     ```bash
     ssh <username-hypervisor>@<hostname-hypervisor> "pct start <container-id>"
