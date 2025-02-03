@@ -22,6 +22,7 @@ This repository is structured into several key directories:
   - `pdftk.md`: PDF Toolkit usage.
   - `pip packaging.md`: Packaging Python projects with pip.
   - `ssh.md`: Secure Shell (SSH) configuration and tips.
+  - `wordpress.md`: WordPress debugging and tips.
 
 - **pages/other/**: Templates for other pages, such as the homepage of my Debian package repository. These are provided as inspiration and should not be used as-is.
 
