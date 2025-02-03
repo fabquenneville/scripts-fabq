@@ -257,6 +257,9 @@ ssh-copy-id -i <ssh-key-client> <username>@<hostname-intranet>
    dnf install -y httpd mod_ssl php php-cli php-common php-fpm php-gd php-intl php-json php-mbstring php-mysqlnd php-opcache php-pdo php-pecl-imagick php-xml php-zip  policycoreutils-python-utils
    # Other xml php modules
    dnf install -y php-dom php-simplexml php-xmlreader php-iconv php-posix php-sockets php-tokenizer
+
+   # Necessary for wp-cli
+   dnf install -y php-cli php-mbstring unzip curl
    ```
 
    **WordPress Dependencies on AlmaLinux (MariaDB)**
@@ -441,7 +444,29 @@ ssh-copy-id -i <ssh-key-client> <username>@<hostname-intranet>
     cp -r wordpress/* /var/www/html/
     ```
 
-16. **Modify Permissions**
+16. **Download and Install WordPress CLI**
+
+    As root
+
+    ```bash
+    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    php wp-cli.phar --info
+    chmod +x wp-cli.phar
+    mv wp-cli.phar /usr/local/bin/wp
+    wp --info
+    ```
+
+    As user **Enable Tab Completion**
+
+    ```bash
+    su -s /bin/bash -l apache
+    mkdir -p ~/.wp-cli
+    wp cli completions --shell=bash > ~/.wp-cli/wp-completion.bash
+    echo 'source ~/.wp-cli/wp-completion.bash' >> ~/.bashrc
+    source ~/.bashrc
+    ```
+
+17. **Modify Permissions**
 
     Set appropriate ownership and adjust the SELinux security context for WordPress files:
 
@@ -456,7 +481,7 @@ ssh-copy-id -i <ssh-key-client> <username>@<hostname-intranet>
     setsebool -P httpd_can_network_connect true
     ```
 
-17. **Allow Override**
+18. **Allow Override**
 
     ```bash
     nano /etc/httpd/conf/httpd.conf
@@ -468,11 +493,11 @@ ssh-copy-id -i <ssh-key-client> <username>@<hostname-intranet>
     AllowOverride All
     ```
 
-18. **Configure Wordpress**
+19. **Configure Wordpress**
 
     Now, visit `http://<hostname-intranet>` to follow the wordpress configuration.
 
-19. **Configure WireGuard**
+20. **Configure WireGuard**
 
     ```bash
     nano /etc/wireguard/proxy-lan.conf
@@ -480,14 +505,14 @@ ssh-copy-id -i <ssh-key-client> <username>@<hostname-intranet>
     wg show
     ```
 
-20. **Back-up post installation**
+21. **Back-up post installation**
 
     ```bash
     ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:<container-id> --state stopped"
     ssh <username-hypervisor>@<hostname-hypervisor> "vzdump <container-id> --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup post installation\""
     ```
 
-21. **Start the server**
+22. **Start the server**
 
     ```bash
     ssh <username-hypervisor>@<hostname-hypervisor> "pct start <container-id>"
