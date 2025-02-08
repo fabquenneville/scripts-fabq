@@ -93,14 +93,17 @@ def main():
                         help='Command to run')
 
     # Add other arguments with both short and long options, including defaults
-    parser.add_argument("--track",
+    parser.add_argument("-t",
+                        "--track",
                         type=int,
                         default=0,
                         help="Audio track index (default is 0).")
-    parser.add_argument("--file",
+    parser.add_argument("-f",
+                        "--file",
                         type=str,
                         help="Path to a specific video file.")
     parser.add_argument(
+        "-d",
         "--dir",
         type=str,
         default=os.getcwd(),

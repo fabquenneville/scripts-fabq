@@ -91,7 +91,7 @@ def main():
 
     # Create argument parser
     parser = argparse.ArgumentParser(
-        description="Manage subtitles tracks in video files.")
+        description="Manage subtitle tracks in video files.")
 
     # Define command line arguments
     # Add a positional argument for the command
@@ -101,16 +101,19 @@ def main():
 
     # Add other arguments with both short and long options, including defaults
     parser.add_argument(
+        "-t",
         "--track",
         type=int,
         default=0,
         help=
         "Subtitle track index (default is 0). Use 'none' to remove all subtitles."
     )
-    parser.add_argument("--file",
+    parser.add_argument("-f",
+                        "--file",
                         type=str,
                         help="Path to a specific video file.")
     parser.add_argument(
+        "-d",
         "--dir",
         type=str,
         default=os.getcwd(),
