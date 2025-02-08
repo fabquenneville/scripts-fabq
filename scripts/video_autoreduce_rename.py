@@ -2,6 +2,7 @@
 # video_autoreduce_rename.py
 
 import argparse
+import argcomplete
 import colorama
 import os
 import re
@@ -116,6 +117,9 @@ def main():
         '--debug',
         action='store_true',
         help='enable debug mode for printing additional messages')
+
+    # Enable autocomplete for argparse
+    argcomplete.autocomplete(parser)
 
     # Parse command line arguments
     args = parser.parse_args()

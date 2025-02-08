@@ -2,6 +2,7 @@
 # video_autoreduce.py
 
 import argparse
+import argcomplete
 import colorama
 import os
 import re
@@ -475,6 +476,9 @@ def main():
         '--debug',
         action='store_true',
         help='enable debug mode for printing additional error messages')
+
+    # Enable autocomplete for argparse
+    argcomplete.autocomplete(parser)
 
     # Parse command line arguments
     args = parser.parse_args()
