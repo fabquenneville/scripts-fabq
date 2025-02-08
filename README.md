@@ -9,6 +9,7 @@ This repository is structured into several key directories:
 - **scripts/**: Contains individual scripts for various tasks. Currently, it includes:
 
   - `video_remove_audio.py`: A script for removing audio from video files.
+  - `video_autoreduce.py`: A script for automatic video resolution reduction of video files.
 
 - **notes/**: A collection of markdown files containing notes on various topics, including:
 
