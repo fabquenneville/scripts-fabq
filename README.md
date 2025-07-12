@@ -8,6 +8,9 @@ This repository is structured into several key directories:
 
 - **scripts/**: Contains individual scripts for various tasks. Currently, it includes:
 
+  - `scripts/library/`: Libraries used by Python scripts.
+    - `venv_utils.py`: Utility functions for creating, activating, and managing Python virtual environments.
+  - `change_case.py`: A script for renaming files and directories by changing their case.
   - `video_manage_audio.py`: A script for removing audio from video files.
   - `video_manage_subtitles.py`: A script for removing subtitles from video files.
   - `video_autoreduce.py`: A script for automatic resolution reduction of video files.
