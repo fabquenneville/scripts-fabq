@@ -28,12 +28,31 @@ def parse_verbose() -> Namespace:
         Namespace: Contains a single attribute 'verbose' (bool).
     """
     parser = ArgumentParser(add_help=False)
+
     parser.add_argument(
-        "--verbose",
         "-v",
-        action="store_true",
-        help="Enable verbose output.",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity: -v = verbose, -vv = debug, -vvv = trace",
     )
+
+    parser.add_argument(
+        "--debug",
+        dest="verbose",
+        action="store_const",
+        const=2,
+        help="Enable debug output (equivalent to -vv)",
+    )
+
+    parser.add_argument(
+        "--trace",
+        dest="verbose",
+        action="store_const",
+        const=3,
+        help="Enable full trace output (equivalent to -vvv)",
+    )
+
     return parser.parse_known_args()[0]
 
 
@@ -56,7 +75,7 @@ def create_venv(verbose: bool = False) -> None:
     Args:
         verbose (bool): If True, prints progress messages.
     """
-    if verbose:
+    if verbose >= 2:
         print(f"Creating virtual environment in {VENV_DIR}...")
     venv.create(VENV_DIR, with_pip=True)
 
@@ -72,7 +91,7 @@ def install_requirements(verbose: bool = False) -> None:
         print(f"Error: requirements.txt not found at {REQUIREMENTS_FILE}")
         sys.exit(1)
 
-    if verbose:
+    if verbose >= 2:
         print(f"Installing/updating requirements from {REQUIREMENTS_FILE}...")
 
     pip_cmd = [str(VENV_DIR / "bin" / "pip")]
@@ -80,21 +99,21 @@ def install_requirements(verbose: bool = False) -> None:
     try:
         subprocess.check_call(
             pip_cmd + ["install", "-r", str(REQUIREMENTS_FILE)],
-            stdout=None if verbose else subprocess.DEVNULL,
-            stderr=None if verbose else subprocess.DEVNULL,
+            stdout=None if verbose >= 2 else subprocess.DEVNULL,
+            stderr=None if verbose >= 2 else subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError as e:
-        print(f"Failed to install requirements: {e}")
+        print(f"Error: Failed to install requirements: {e}")
         sys.exit(1)
 
     try:
         subprocess.check_call(
             pip_cmd + ["check"],
-            stdout=None if verbose else subprocess.DEVNULL,
-            stderr=None if verbose else subprocess.DEVNULL,
+            stdout=None if verbose >= 2 else subprocess.DEVNULL,
+            stderr=None if verbose >= 2 else subprocess.DEVNULL,
         )
     except subprocess.CalledProcessError:
-        print("Dependency conflict detected — your environment may be broken.")
+        print("Error: Dependency conflict detected — your environment may be broken.")
         raise
 
 
