@@ -63,6 +63,7 @@ Replace the placeholders below with the appropriate values for your setup:
   - Hostname - Hypervisor: `<hostname-hypervisor>` (e.g., proxmox-hypervisor.domain.com)
   - Hostname - Hypervisor NAS: `<hostname-hypervisor-nas>` (e.g., nas-server.domain.com)
   - Name - Hypervisor NAS: `<name-hypervisor-nas>` (e.g., nas-server)
+  - Container ID - Hypervisor: `<container-id-hypervisor>` (e.g., 100)
 
 - **SSH Keys**
 
@@ -126,40 +127,40 @@ ssh <username>@<hostname-hypervisor-nas> "ls /mnt/proxmox/template/cache/"
 **Create the container**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "pct create 100 <name-hypervisor-nas>:vztmpl/debian-12-upgraded_12.5_amd64.tar.zst --hostname <hostname-intranet> --cores 2 --memory 2048 --swap 2048 --net0 name=net0,bridge=vmbr0,ip=dhcp,firewall=1 --rootfs <name-hypervisor-nas>:250 --unprivileged 1 --features nesting=1 --ssh-public-keys <ssh-key-proxmox> --start 1"
+ssh <username-hypervisor>@<hostname-hypervisor> "pct create <container-id-hypervisor> <name-hypervisor-nas>:vztmpl/debian-12-upgraded_12.5_amd64.tar.zst --hostname <hostname-intranet> --cores 2 --memory 2048 --swap 2048 --net0 name=net0,bridge=vmbr0,ip=dhcp,firewall=1 --rootfs <name-hypervisor-nas>:250 --unprivileged 1 --features nesting=1 --ssh-public-keys <ssh-key-proxmox> --start 1"
 ```
 
 **Backup**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
+ssh <username-hypervisor>@<hostname-hypervisor> "vzdump <container-id-hypervisor> --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
 ```
 
-**Set the state of the Proxmox HA Manager for Container 100**
+**Set the state of the Proxmox HA Manager for Container <container-id-hypervisor>**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager add ct:100"
-ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager remove ct:100"
+ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager add ct:<container-id-hypervisor>"
+ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager remove ct:<container-id-hypervisor>"
 ```
 
-**Set the state and limits of the Proxmox Container 100 in the HA Manager**
+**Set the state and limits of the Proxmox Container <container-id-hypervisor> in the HA Manager**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:100 --state started --max_relocate 3 --max_restart 3"
-ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:100 --state stopped"
-ssh <username-hypervisor>@<hostname-hypervisor> "pct reboot 100"
+ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:<container-id-hypervisor> --state started --max_relocate 3 --max_restart 3"
+ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:<container-id-hypervisor> --state stopped"
+ssh <username-hypervisor>@<hostname-hypervisor> "pct reboot <container-id-hypervisor>"
 ```
 
-**Destroy the Proxmox Container 100 forcefully**
+**Destroy the Proxmox Container <container-id-hypervisor> forcefully**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "pct destroy 100 --force --purge"
+ssh <username-hypervisor>@<hostname-hypervisor> "pct destroy <container-id-hypervisor> --force --purge"
 ```
 
-**Move the Proxmox Container 100 to another host**
+**Move the Proxmox Container <container-id-hypervisor> to another host**
 
 ```bash
-ssh <username-hypervisor>@<hostname-hypervisor> "pct migrate 100 hv2"
+ssh <username-hypervisor>@<hostname-hypervisor> "pct migrate <container-id-hypervisor> hv2"
 ```
 
 ### SSH Connection
@@ -208,7 +209,7 @@ cat /home/<username>/.ssh/<username>.pub >> /home/<username>/.ssh/authorized_key
 2. **Backup before starting**
 
    ```bash
-   ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
+   ssh <username-hypervisor>@<hostname-hypervisor> "vzdump <container-id-hypervisor> --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup fresh install\""
    ```
 
 3. **Install Required Dependencies**
@@ -503,11 +504,11 @@ cat /home/<username>/.ssh/<username>.pub >> /home/<username>/.ssh/authorized_key
 19. **Backup post installation**
 
     ```bash
-    ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:100 --state stopped"
-    ssh <username-hypervisor>@<hostname-hypervisor> "vzdump 100 --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup post installation\""
+    ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:<container-id-hypervisor> --state stopped"
+    ssh <username-hypervisor>@<hostname-hypervisor> "vzdump <container-id-hypervisor> --compress zstd --mode stop --storage <name-hypervisor-nas> --note \"$(date +'%Y-%m-%d %H:%M') Backup post installation\""
     ```
 
 20. **Start the server**
     ```bash
-    ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:100 --state started --max_relocate 3 --max_restart 3"
+    ssh <username-hypervisor>@<hostname-hypervisor> "ha-manager set ct:<container-id-hypervisor> --state started --max_relocate 3 --max_restart 3"
     ```
