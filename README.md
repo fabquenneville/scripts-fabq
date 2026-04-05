@@ -7,31 +7,29 @@
 This repository is structured into several key directories:
 
 - **scripts/**: Contains individual scripts for various tasks. Currently, it includes:
-
   - `scripts/library/`: Libraries used by Python scripts.
     - `venv_utils.py`: Utility functions for creating, activating, and managing Python virtual environments.
   - `change_case.py`: A script for renaming files and directories by changing their case.
-  - `video_manage_audio.py`: A script for removing audio from video files.
-  - `video_manage_subtitles.py`: A script for removing subtitles from video files.
   - `video_autoreduce.py`: A script for automatic resolution reduction of video files.
   - `video_autoreduce_rename.py`: A script for automated renaming of video files post resolution reduction.
+  - `video_manage_audio.py`: A script for removing audio from video files.
+  - `video_manage_subtitles.py`: A script for removing subtitles from video files.
 
 - **notes/**: A collection of markdown files containing notes on various topics, including:
-
-  - `brother.md`: Information about Brother printers on Linux.
-  - `btrfs.md`: Btrfs filesystem configuration and tips.
-  - `chrome-driver.md`: Notes on ChromeDriver setup and usage on Linux.
-  - `debian packaging.md`: Debian packaging guidelines.
+  - `brother.md`: Brother printer setup and troubleshooting on Linux.
+  - `btrfs.md`: Btrfs filesystem management, balances, scrubs, snapshots, and drive replacement.
+  - `chrome-driver.md`: ChromeDriver setup and usage.
+  - `debian-packaging.md`: Building and maintaining Debian packages.
   - `dns.md`: DNS configuration and troubleshooting.
-  - `linux.md`: General Linux tips.
+  - `linux.md`: General Linux commands — users, system management, archiving, and diagnostics.
   - `pdf.md`: PDF manipulation with Linux command line.
   - `pdftk.md`: PDF Toolkit usage.
-  - `pip packaging.md`: Packaging Python projects with pip.
-  - `ssh.md`: Secure Shell (SSH) configuration and tips.
+  - `pip-packaging.md`: Packaging and publishing Python projects with pip.
+  - `ssh.md`: SSH configuration, key management, and tunneling tips.
+  - `storage.md`: Storage tooling — smartctl, badblocks, dd, hdparm, fdisk, and fstab/mount management.
   - `wordpress.md`: WordPress debugging and tips.
 
 - **pages/other/**: Templates for other pages, such as the homepage of my Debian package repository. These are provided as inspiration and should not be used as-is.
-
   - `debrepo.fabq.ca.html`: This file serves as the homepage for my Debian package repository. It provides the instructions to add the repository to user's system's sources list and install packages securely.
 
 - **pages/errors/**: Templates for error pages. These are provided as inspiration and should not be used as-is.
