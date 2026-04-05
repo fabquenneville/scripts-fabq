@@ -4,542 +4,475 @@
 
 - [BTRFS](#btrfs)
   - [Table of Contents](#table-of-contents)
-  - [Information on Drives](#information-on-drives)
+  - [Placeholders](#placeholders)
+  - [BTRFS Command Shorthands](#btrfs-command-shorthands)
   - [Information on Filesystem](#information-on-filesystem)
-  - [Backup Procedures](#backup-procedures)
-  - [Recovery](#recovery)
   - [Drive Manipulation](#drive-manipulation)
     - [Replace Drives](#replace-drives)
   - [Filesystem Manipulation](#filesystem-manipulation)
-    - [Upgrading Btrfs block group cache to V2](#upgrading-btrfs-block-group-cache-to-v2)
+    - [Upgrading Btrfs Block Group Cache to V2](#upgrading-btrfs-block-group-cache-to-v2)
+    - [Defrag](#defrag)
   - [Balances](#balances)
   - [Scrub](#scrub)
   - [Snapshots](#snapshots)
+    - [Create Snapshots](#create-snapshots)
+    - [Delete Snapshots](#delete-snapshots)
+  - [Backup Procedures](#backup-procedures)
+  - [Recovery](#recovery)
 
-## Information on Drives
+## Placeholders
 
-**List of Drives and Mountpoints**
+Replace the placeholders below with the appropriate values for your setup:
 
-To check all attached drives:
+- **Devices**
+  - Block device: `<device>` (e.g., /dev/sda)
+  - Source device to replace: `<source-device>` (e.g., /dev/sdb)
+  - Target device: `<target-device>` (e.g., /dev/sdc)
+  - UUID: `<uuid>` (e.g., a1b2c3d4-e5f6-7890-abcd-ef1234567890)
 
-```bash
-ls /dev/sd*
-ls /dev/nv*
-```
+- **Paths**
+  - Mount point: `<mountpoint>` (e.g., /mnt/media)
+  - Subvolume name: `<subvolume>` (e.g., root, home, backups, snapshots)
+  - Subvolume ID: `<subvolume-id>` (e.g., 257)
+  - Snapshot label: `<snapshot-label>` (e.g., 2024-09-15)
 
-To view mountpoints and drive details such as names, sizes, and mountpoints:
+## BTRFS Command Shorthands
 
-```bash
-lsblk
-df -h
-cat /etc/fstab
-```
+Most `btrfs` subcommands accept shortened aliases. The table below lists the common ones used throughout this document.
 
-**Drive Information**
-
-To get detailed information and serial number of a specific drive:
-
-```bash
-smartctl -i /dev/sdc
-```
-
-**Find the Device Path from UUID**
-
-Using lsblk:
-
-```bash
-lsblk -o NAME,UUID,MOUNTPOINT
-```
-
-Using blkid:
-
-```bash
-blkid | grep <UUID>
-```
+| Long form                     | Short form              |
+| ----------------------------- | ----------------------- |
+| `btrfs filesystem`            | `btrfs fi`              |
+| `btrfs filesystem show`       | `btrfs fi show`         |
+| `btrfs filesystem usage`      | `btrfs fi usage`        |
+| `btrfs filesystem df`         | `btrfs fi df`           |
+| `btrfs filesystem resize`     | `btrfs fi resize`       |
+| `btrfs filesystem defragment` | `btrfs fi defrag`       |
+| `btrfs subvolume`             | `btrfs sub`             |
+| `btrfs subvolume list`        | `btrfs sub list`        |
+| `btrfs subvolume snapshot`    | `btrfs sub snap`        |
+| `btrfs subvolume delete`      | `btrfs sub del`         |
+| `btrfs subvolume get-default` | `btrfs sub get-default` |
+| `btrfs subvolume set-default` | `btrfs sub set-default` |
+| `btrfs device`                | `btrfs dev`             |
+| `btrfs device add`            | `btrfs dev add`         |
+| `btrfs device usage`          | `btrfs dev usage`       |
+| `btrfs device stats`          | `btrfs dev stats`       |
+| `btrfs balance start`         | `btrfs bal start`       |
+| `btrfs balance status`        | `btrfs bal status`      |
+| `btrfs balance cancel`        | `btrfs bal cancel`      |
+| `btrfs inspect-internal`      | `btrfs insp`            |
 
 ## Information on Filesystem
 
 **Show Basic Filesystem Information**
 
-To display basic information (size, IDs, paths, etc.) for the specified mountpoint:
+Display basic information (size, IDs, paths, etc.) for the specified mountpoint:
 
 ```bash
-btrfs fi show /mnt/media/
+btrfs fi show <mountpoint>
 ```
 
-**Display Detailed Usage Information**
+**Display detailed usage information**
 
-To show detailed usage information (allocated, unallocated, etc.) for the specified mountpoint:
+To show detailed usage information (allocated, unallocated, free, used, etc.) for the specified mountpoint:
 
 ```bash
-btrfs fi usage /mnt/media
+btrfs fi usage <mountpoint>
 ```
+
+**Display detailed usage information as a table**
+
+```bash
+btrfs fi usage -T <mountpoint>
+```
+
+- `-T` The tabular flag gives you a nice grid that shows exactly how much Data, Metadata, and System space is allocated per device.
 
 **Display Detailed Allocation Information**
 
-To view detailed allocation information (block groups, used space) for the specified mountpoint:
+View block groups and used space:
 
 ```bash
-btrfs fi df /mnt/media
+btrfs fi df <mountpoint>
 ```
 
 **Get Detailed Device Usage Statistics**
 
-To get detailed device usage statistics (physical size, unallocated space, RAID levels, etc.) for a BTRFS filesystem:
+Physical size, unallocated space, RAID levels, etc.:
 
 ```bash
-btrfs device usage /mnt/media
+btrfs device usage <mountpoint>
 ```
 
 **Scan and Display BTRFS Information**
 
-To scan and display BTRFS information for all devices or a specific drive:
+Scan all devices or a specific drive:
 
 ```bash
-btrfs device scan /dev/sda/
+btrfs device scan <device>
 ```
 
 **Retrieve Statistics and Error Information**
 
-To get statistics and error information (read errors, write errors, flush errors, etc.) for the specified mountpoint:
+Read errors, write errors, flush errors, etc.:
 
 ```bash
-btrfs device stats /mnt/media
+btrfs device stats <mountpoint>
 ```
 
 **List BTRFS Subvolumes**
 
-To list BTRFS subvolumes:
-
 ```bash
-btrfs subvolume list /
-btrfs subvolume list /home/fabrice
-btrfs subvolume list /mnt/workbench
+btrfs subvolume list <mountpoint>
 ```
 
 **Default Subvolume**
 
-To check if a non-standard subvolume is set as the default:
+Check if a non-standard subvolume is set as the default:
 
 ```bash
-btrfs subvol get-default /mnt/tmp/
-btrfs subvol list /mnt/tmp/
+btrfs subvol get-default <mountpoint>
+btrfs subvol list <mountpoint>
 ```
 
-To change the default subvolume if a non-standard one is set:
+Change the default subvolume:
 
 ```bash
-btrfs subvol set-default 257 /mnt/tmp/
+btrfs subvol set-default <subvolume-id> <mountpoint>
 ```
 
 **Verify Current Cache Version**
 
-To check if your filesystem is using cache V1 by device:
+Check if your filesystem is using cache V1 by device:
 
 ```bash
-btrfs inspect-internal dump-super -f /dev/<device> | grep cache_generation
+btrfs inspect-internal dump-super -f <device> | grep cache_generation
 ```
 
-To check if your filesystem is using cache V1 by UUID:
+By UUID:
 
 ```bash
-btrfs inspect-internal dump-super -f $(blkid -U <UUID>) | grep cache_generation
+btrfs inspect-internal dump-super -f $(blkid -U <uuid>) | grep cache_generation
 ```
 
-- If cache_generation is present, it indicates cache V1 is in use. If it's absent, the filesystem is already using V2.
-
-## Backup Procedures
-
-**Desktop Backup: Root and Home**
-
-1. Mount snapshot location:
-
-   ```bash
-   mount UUID=394decca-4780-47c9-9ae3-e4d03681a791 -o subvol=snapshots /mnt/snapshots
-   ```
-
-2. Create snapshots for root and home:
-
-   ```bash
-   btrfs subvolume snapshot / "/mnt/snapshots/root/2021-05-23 - Fedora 34 upgrade"
-   btrfs subvolume snapshot /home "/mnt/snapshots/home/2021-05-23 - Fedora 34 upgrade"
-   ```
-
-3. Unmount after creating snapshots:
-
-   ```bash
-   umount /mnt/snapshots
-   ```
-
-**Data Backup: Workbench, Documents, Education**
-
-1. Mount snapshot location:
-
-   ```bash
-   mount UUID=72e1770a-9fc0-461e-88d3-db640ff53dd9 -o subvol=snapshots /mnt/snapshots
-   ```
-
-2. Create snapshots for multiple directories:
-
-   ```bash
-   btrfs subvolume snapshot /mnt/workbench "/mnt/snapshots/workbench/2021-05-23 - Fedora 34 upgrade"
-   btrfs subvolume snapshot /home/fabrice/Documents "/mnt/snapshots/Documents/2021-05-23 - Fedora 34 upgrade"
-   btrfs subvolume snapshot /home/fabrice/Education "/mnt/snapshots/Education/2021-05-23 - Fedora 34 upgrade"
-   ```
-
-3. Unmount after creating snapshots:
-
-   ```bash
-   umount /mnt/snapshots
-   ```
-
-**STOR1 Fedora Backup**
-
-1. Mount snapshot location:
-
-   ```bash
-   mount UUID=e4fd608e-cfe8-4c10-b6d0-03b05bae8aa6 -o subvol=snapshots /mnt/snapshots
-   ```
-
-2. Create snapshot:
-
-   ```bash
-   btrfs subvolume snapshot / "/mnt/snapshots/root/2021-06-06"
-   ```
-
-3. Unmount after creating snapshot:
-
-   ```bash
-   umount /mnt/snapshots
-   ```
-
-**STOR1 Debian Backup**
-
-1. Mount snapshot location:
-
-   ```bash
-   mount UUID=c9a77f3c-626f-47bd-b4e3-9a094bea287f -o subvol=snapshots /mnt/snapshots
-   ```
-
-2. Create snapshot:
-
-   ```bash
-   btrfs subvolume snapshot / "/mnt/snapshots/root/2021-07-12 - post mostly setup"
-   ```
-
-3. Unmount after creating snapshot:
-
-   ```bash
-   umount /mnt/snapshots
-   ```
-
-**STOR2 Backup**
-
-1. Mount snapshot location:
-
-   ```bash
-   mount UUID=30bd5e0e-e781-4e87-8fb8-ea5606403b15 -o subvol=snapshots /mnt/snapshots
-   ```
-
-2. Create snapshot:
-
-   ```bash
-   btrfs subvolume snapshot / "/mnt/snapshots/root/2021-06-06 - Fedora 34"
-   ```
-
-3. Unmount after creating snapshot:
-
-   ```bash
-   umount /mnt/snapshots
-   ```
-
-## Recovery
-
-**Mount a Subvolume with Recovery Options**
-
-```bash
-mount -o recovery,subvol=backups UUID=aa5c1d34-ecba-42a9-9339-8f7879d47536 /mnt/tmp
-```
-
-**Clear Cache During Mount**
-
-```bash
-mount -o clear_cache,subvol=backups UUID=aa5c1d34-ecba-42a9-9339-8f7879d47536 /mnt/tmp
-```
-
-**Data Restoration**
-
-To restore data using `btrfs restore`:
-
-```bash
-btrfs restore -D /dev/sdb
-```
+- If `cache_generation` is present, cache V1 is in use. If absent, the filesystem is already using V2.
 
 ## Drive Manipulation
 
 **Mount Whole Drive**
 
 ```bash
-mount UUID=c9a77f3c-626f-47bd-b4e3-9a094bea287f /mnt/tmp
+mount UUID=<uuid> <mountpoint>
+```
+
+**Mount Subvolume by Name**
+
+```bash
+mount UUID=<uuid> -o subvol=<subvolume> <mountpoint>
 ```
 
 **Mount Subvolume by ID**
 
 ```bash
 btrfs subvol list /
-mount -o subvolid=5 /dev/disk/by-uuid/7a22514b-594a-43a3-8fdd-4df1530b5465 /mnt
+mount -o subvolid=<subvolume-id> /dev/disk/by-uuid/<uuid> <mountpoint>
 ```
 
 **Add a New Drive**
 
-To add a new drive to an existing BTRFS setup:
-
 ```bash
-btrfs device add /dev/sdf /mnt/media/
+btrfs device add <device> <mountpoint>
 ```
 
 **Resize Filesystem**
 
+Grow the filesystem on a specific device to its maximum:
+
 ```bash
-btrfs filesystem resize 1:max /mnt/media/
+btrfs filesystem resize 1:max <mountpoint>
 ```
 
 **Create Subvolumes**
 
 ```bash
-btrfs subvol create /mnt/tmp/root
-btrfs subvol create /mnt/tmp/snapshots
+btrfs subvol create <mountpoint>/<subvolume>
 ```
 
 ### Replace Drives
 
-**Replace the source drive with the target drive:**
+**Start the replacement process:**
 
-This command will start the replacement process where the data from the old drive (`/dev/sdb`) is copied over to the new drive (`/dev/sdj`).
-
-```bash
-btrfs replace start /dev/sdb /dev/sdj /mnt/media
-```
-
-- `/dev/sdb`: Source drive to be replaced.
-- `/dev/sdj`: Target drive to replace the source drive.
-- `/mnt/media`: Mount point of the BTRFS filesystem.
-
-**Monitor the progress of the replacement:**
-
-Once the replacement process has started, you can monitor its progress with the following command:
+Copies data from the old drive to the new drive while the filesystem remains mounted:
 
 ```bash
-btrfs replace status /mnt/media
+btrfs replace start <source-device> <target-device> <mountpoint>
 ```
 
-- This will print the current status of the drive replacement operation, showing how much data has been migrated.
+- `<source-device>`: Drive to be replaced.
+- `<target-device>`: Drive to replace it with.
+- `<mountpoint>`: Mount point of the BTRFS filesystem.
+
+**Monitor the progress:**
+
+```bash
+btrfs replace status <mountpoint>
+```
 
 **Monitor progress interactively:**
 
-For a more detailed, interactive status view of the replacement process, use the `-i` option:
-
 ```bash
-btrfs replace status -i /mnt/media
+btrfs replace status -i <mountpoint>
 ```
 
-- `-i`: This flag provides an interactive mode where the progress is updated in real time.
+- `-i`: Updates progress in real time.
 
 **Notes:**
 
-- The `btrfs replace` command allows you to replace a faulty or underperforming drive without unmounting the filesystem, making it ideal for live systems.
-- It can be used for upgrading storage by replacing smaller drives with larger ones, or for replacing failing drives.
-- Ensure that the target drive has enough space to accommodate the data from the source drive.
+- `btrfs replace` works on a live mounted filesystem — no unmounting required.
+- Useful for both failing drive replacement and capacity upgrades.
+- Ensure the target drive has enough space to accommodate the source data.
 
 ## Filesystem Manipulation
 
-### Upgrading Btrfs block group cache to V2
+### Upgrading Btrfs Block Group Cache to V2
 
-**From a running system non-root filesystems**
-
-```bash
-mount -o remount,clear_cache,space_cache=v2 /mnt/<mount-point>
-```
-
-**From a running system on root**
-
-Check if your filesystem is using cache V1:
+**Non-root filesystems (running system):**
 
 ```bash
-btrfs inspect-internal dump-super -f /dev/<device> | grep cache_generation
+mount -o remount,clear_cache,space_cache=v2 <mountpoint>
 ```
 
-Enable Cache V2
+**Root filesystem (running system):**
 
-```bash
-nano /etc/default/grub
-# Locate the line starting with GRUB_CMDLINE_LINUX_DEFAULT or GRUB_CMDLINE_LINUX and add the following options:
-rootflags=clear_cache,space_cache=v2
-```
+1. Check if using cache V1:
 
-Example:
+   ```bash
+   btrfs inspect-internal dump-super -f <device> | grep cache_generation
+   ```
 
-```bash
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash rootflags=clear_cache,space_cache=v2"
-```
+2. Enable cache V2 via GRUB:
 
-```bash
-update-grub
-reboot
-```
+   ```bash
+   nano /etc/default/grub
+   # Add to GRUB_CMDLINE_LINUX_DEFAULT or GRUB_CMDLINE_LINUX:
+   # rootflags=clear_cache,space_cache=v2
+   ```
 
-Verify the Change
+   Example:
 
-```bash
-btrfs inspect-internal dump-super -f /dev/<device> | grep cache_generation
-```
+   ```bash
+   GRUB_CMDLINE_LINUX_DEFAULT="quiet splash rootflags=clear_cache,space_cache=v2"
+   ```
 
-Remove `clear_cache` Option
+   ```bash
+   update-grub
+   reboot
+   ```
 
-```bash
-nano /etc/default/grub
-# Remove clear_cache from the rootflags.
-update-grub
-```
+3. Verify the change:
 
-**From a live system**
+   ```bash
+   btrfs inspect-internal dump-super -f <device> | grep cache_generation
+   ```
+
+4. Remove `clear_cache` from GRUB after confirming:
+
+   ```bash
+   nano /etc/default/grub
+   # Remove clear_cache from rootflags, then:
+   update-grub
+   ```
+
+**From a live system:**
 
 ```bash
 apt update
 apt install btrfs-progs
 lsblk -o NAME,UUID
 blkid
-mount -o clear_cache,space_cache=v2 /dev/disk/by-uuid/<UUID> /mnt
-btrfs inspect-internal dump-super -f /dev/disk/by-uuid/<UUID> | grep cache_generation
-umount /mnt
-
+mount -o clear_cache,space_cache=v2 /dev/disk/by-uuid/<uuid> <mountpoint>
+btrfs inspect-internal dump-super -f /dev/disk/by-uuid/<uuid> | grep cache_generation
+umount <mountpoint>
 ```
+
+### Defrag
+
+```bash
+btrfs filesystem defrag -r -v -clzo <mountpoint>
+```
+
+- `-r`: Recursive.
+- `-v`: Verbose.
+- `-clzo`: Optional LZO compression to save space.
 
 ## Balances
 
-**Perform a Full Balance with Minimal Usage**
+**Full balance on nearly empty block groups:**
 
 ```bash
-btrfs balance start --full-balance -dusage=0 -musage=0 /mnt/media/
+btrfs balance start --full-balance -dusage=0 -musage=0 <mountpoint>
 ```
 
-- `--full-balance` is default but with a warning if not specified.
-- `-dusage=0` means only data block groups that are nearly empty (0% full) will be balanced.
-- `-musage=0` means only metadata block groups that are nearly empty (0% full) will be balanced.
+- `--full-balance`: Default but with a warning if not specified.
+- `-dusage=0`: Only balance data block groups that are ~0% full.
+- `-musage=0`: Only balance metadata block groups that are ~0% full.
 
-**Perform a Full Balance on Partially Used Blocks**
+**Full balance on partially used block groups:**
 
 ```bash
-btrfs balance start --full-balance -dusage=50 -musage=50 /mnt/media/
+btrfs balance start --full-balance -dusage=50 -musage=50 <mountpoint>
 ```
 
-- `-dusage=50` means data block groups that are less than 50% full will be included in the balance process.
-- `-musage=50` means metadata block groups that are less than 50% full will also be balanced.
+- `-dusage=50`: Include data block groups less than 50% full.
+- `-musage=50`: Include metadata block groups less than 50% full.
 
-**Balance data in the background**
+**Balance data in the background:**
 
 ```bash
-btrfs balance start --bg -d /mnt/media
+btrfs balance start --bg -d <mountpoint>
 ```
 
-**Balance metadata in the background**
+**Balance metadata in the background:**
 
 ```bash
-btrfs balance start --bg -m /mnt/media
+btrfs balance start --bg -m <mountpoint>
 ```
 
-**Balance data and metadata in the background**
+**Balance data and metadata in the background:**
 
 ```bash
-btrfs balance start --bg --full-balance -dusage=0 -musage=0 /mnt/media/
+btrfs balance start --bg --full-balance -dusage=0 -musage=0 <mountpoint>
 ```
 
-**To balance 100 chunks of data**
+**Balance a limited number of chunks:**
 
 ```bash
-btrfs balance start --bg -dlimit=100 /mnt/media/
+btrfs balance start --bg -dlimit=100 <mountpoint>
 ```
 
-**Cancel Balance Operation**
+**Cancel a balance:**
 
 ```bash
-btrfs balance cancel /mnt/media/
+btrfs balance cancel <mountpoint>
 ```
 
-**Monitor Balance Status**
+**Monitor balance status:**
 
 ```bash
-btrfs balance status /mnt/media/
+btrfs balance status <mountpoint>
 ```
 
 ## Scrub
 
-**Start a Scrub Operation**
+**Start a scrub**
 
-To start a scrub operation to verify data integrity:
+The scrub operation verifies data integrity against checksums
 
 ```bash
-btrfs scrub start /mnt/media/
+btrfs scrub start <mountpoint>
 ```
 
-**Check Scrub Status**
-
-To check the progress and status of the ongoing scrub:
+**Check scrub status:**
 
 ```bash
-btrfs scrub status /mnt/media/
+btrfs scrub status <mountpoint>
 ```
 
-**Cancel a Scrub Operation**
+**Cancel a scrub:**
 
 ```bash
-btrfs scrub cancel /mnt/media/
+btrfs scrub cancel <mountpoint>
 ```
 
 ## Snapshots
 
-**Create Snapshots**
+### Create Snapshots
 
-1. **Mount snapshot subvolume**
-
-```bash
-mount UUID=c9a77f3c-626f-47bd-b4e3-9a094bea287f -o subvol=snapshots /mnt/snapshots
-```
-
-2. **Create a new snapshot**
-
-```bash
-btrfs subvolume snapshot / "/mnt/snapshots/root/2021-06-26 - Debian install"
-```
-
-3. **Unmount after creating snapshots**
-
-```bash
-umount /mnt/snapshots
-```
-
-**Delete Snapshots**
-
-1. **Mount subvolume containing snapshots**
+1. **Mount the snapshots subvolume:**
 
    ```bash
-   mount -o subvol=snapshots /dev/disk/by-uuid/7a22514b-594a-43a3-8fdd-4df1530b5465 /mnt/snapshots/
+   mount UUID=<uuid> -o subvol=snapshots <mountpoint>
    ```
 
-2. **List available snapshots**
+2. **Create a snapshot:**
 
    ```bash
-   btrfs subvol list /mnt/snapshots/
+   btrfs subvolume snapshot <source-subvolume> "<mountpoint>/<snapshot-label>"
    ```
 
-3. **Delete the desired snapshot**
+3. **Unmount after creating:**
 
    ```bash
-   btrfs subvolume delete /mnt/snapshots/@rootfs/2024-09-15
+   umount <mountpoint>
    ```
 
-4. **Unmount after deleting snapshots**
+### Delete Snapshots
+
+1. **Mount the snapshots subvolume:**
 
    ```bash
-   umount /mnt/snapshots/
+   mount -o subvol=snapshots /dev/disk/by-uuid/<uuid> <mountpoint>
+   ```
+
+2. **List available snapshots:**
+
+   ```bash
+   btrfs subvol list <mountpoint>
+   ```
+
+3. **Delete the desired snapshot:**
+
+   ```bash
+   btrfs subvolume delete <mountpoint>/<snapshot-label>
+   ```
+
+4. **Unmount after deleting:**
+
+   ```bash
+   umount <mountpoint>
+   ```
+
+## Backup Procedures
+
+**Snapshot backup procedure:**
+
+1. Mount snapshot location:
+
+   ```bash
+   mount UUID=<uuid> -o subvol=snapshots <mountpoint>
+   ```
+
+2. Create snapshots for the desired subvolumes:
+
+   ```bash
+   btrfs subvolume snapshot / "<mountpoint>/root/<snapshot-label>"
+   btrfs subvolume snapshot /home "<mountpoint>/home/<snapshot-label>"
+   btrfs subvolume snapshot <source-subvolume> "<mountpoint>/<subvolume>/<snapshot-label>"
+   ```
+
+3. Unmount after creating snapshots:
+
+   ```bash
+   umount <mountpoint>
+   ```
+
+## Recovery
+
+1. **Mount a Subvolume with Recovery Options:**
+
+   ```bash
+   mount -o recovery,subvol=<subvolume> UUID=<uuid> <mountpoint>
+   ```
+
+2. **Clear Cache During Mount:**
+
+   ```bash
+   mount -o clear_cache,subvol=<subvolume> UUID=<uuid> <mountpoint>
+   ```
+
+3. **Data Restoration with btrfs restore:**
+
+   ```bash
+   btrfs restore -D <device>
    ```
