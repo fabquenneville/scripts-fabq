@@ -14,6 +14,8 @@
   - [System Management](#system-management)
     - [Change password of a tar/openssl archive](#change-password-of-a-taropenssl-archive)
     - [Verify two possibly identical folders recursively](#verify-two-possibly-identical-folders-recursively)
+  - [NFS](#nfs)
+  - [Network Diagnostics](#network-diagnostics)
   - [Diagnosis](#diagnosis)
     - [Debian Upgrade Issues](#debian-upgrade-issues)
     - [Wayland Issues](#wayland-issues)
@@ -34,6 +36,32 @@ To gather detailed information about your hardware, use the following commands:
   - `dmidecode -t processor` for CPU details
   - `dmidecode -t memory` for RAM details
   - `dmidecode -t bios` for BIOS information
+
+**CPU information**
+
+```bash
+lscpu
+cat /proc/cpuinfo
+grep -c 'model name' /proc/cpuinfo
+```
+
+- `lscpu`: Structured summary of CPU architecture, cores, threads, and NUMA topology.
+- `cat /proc/cpuinfo`: Raw per-core details including model name, flags, and frequencies.
+- `grep -c 'model name'`: Quick count of logical CPU cores.
+
+**GPU information**
+
+```bash
+lspci | grep -i vga
+```
+
+**CPU frequency scaling driver**
+
+Check which driver is managing CPU frequency scaling (e.g., `intel_pstate`, `acpi-cpufreq`):
+
+```bash
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver
+```
 
 ### Software Information
 
@@ -257,6 +285,60 @@ ln -s /usr/share/zoneinfo/<timezone> /etc/localtime
 systemctl list-units --type=service | grep <service-name>
 ```
 
+**Bind mount a directory**
+
+Make a directory available at another path, useful during chroot recovery or container setup:
+
+```bash
+mount --bind /dev /mnt/<newroot>/dev
+```
+
+**Chroot into another system**
+
+Enter a mounted system's root as if it were the running OS. Useful for recovery, initramfs rebuilds, or bootloader fixes:
+
+```bash
+chroot /mnt/<newroot>
+```
+
+Typically preceded by binding the required pseudo-filesystems:
+
+```bash
+mount --bind /dev  /mnt/<newroot>/dev
+mount --bind /proc /mnt/<newroot>/proc
+mount --bind /sys  /mnt/<newroot>/sys
+chroot /mnt/<newroot>
+```
+
+**Rebuild initramfs**
+
+After kernel or driver changes, rebuild the initramfs and refresh the GRUB configuration:
+
+```bash
+update-initramfs -u
+update-initramfs -u -k all
+```
+
+- `update-initramfs -u`: Rebuilds the initramfs for the currently running kernel.
+- `-k all`: Rebuilds for all installed kernels.
+
+**Rebuild initramfs for a specific kernel version:**
+
+```bash
+update-initramfs -c -k $(uname -r)
+```
+
+- `-c`: Create a new initramfs (instead of updating).
+- `-k $(uname -r)`: Targets the currently running kernel version.
+
+**Update GRUB:**
+
+```bash
+update-grub
+```
+
+- Scans for kernels and regenerates `/boot/grub/grub.cfg`.
+
 ### Change password of a tar/openssl archive
 
 **Decrypt the archive**
@@ -336,6 +418,60 @@ for file1 in $(find "$dir1" -type f); do
 done
 ```
 
+## NFS
+
+**Show NFS exports from a server:**
+
+```bash
+showmount -e <hostname>
+showmount -e localhost
+```
+
+**List active exports and their options on the server:**
+
+```bash
+exportfs -v
+```
+
+## Network Diagnostics
+
+**Measure HTTP response timing:**
+
+Breaks down the full request lifecycle — useful for diagnosing DNS, TLS, or TTFB issues:
+
+```bash
+curl -o /dev/null -s -w \
+  'Lookup: %{time_namelookup}s\nConnect: %{time_connect}s\nAppConnect: %{time_appconnect}s\nTTFB: %{time_starttransfer}s\nTotal: %{time_total}s\n' \
+  https://<hostname>
+```
+
+- `time_namelookup`: DNS resolution time.
+- `time_connect`: TCP connection time.
+- `time_appconnect`: TLS handshake time.
+- `time_starttransfer`: Time to first byte (TTFB).
+- `-o /dev/null`: Discards the response body.
+
+**High-frequency ping:**
+
+Flood-style ping to stress-test latency or detect intermittent packet loss:
+
+```bash
+ping -i 0.002 <host>
+```
+
+- `-i 0.002`: Send a packet every 2ms. Requires root.
+
+**Jumbo frame ping:**
+
+Test whether the network path supports large MTU frames (useful for diagnosing MTU mismatches):
+
+```bash
+ping -s 1472 -i 0.01 <host>
+```
+
+- `-s 1472`: Payload size of 1472 bytes (1472 + 28-byte IP/ICMP header = 1500-byte MTU).
+- Increase `-s` to test jumbo frames (e.g., `-s 8972` for 9000-byte MTU).
+
 ## Diagnosis
 
 ### Debian Upgrade Issues
@@ -366,6 +502,28 @@ Search the system logs for any errors or warnings related to GPU and Wayland:
 journalctl -b | grep -i "drm\|gpu\|display\|wayland\|monitor"
 journalctl -b | grep -i "gnome-shell"
 ```
+
+**Journal Filtering by Date and Keyword**
+
+Search logs within a specific time window:
+
+```bash
+journalctl --since "<date>" --until "<date>" | grep -i <keyword>
+```
+
+Example:
+
+```bash
+journalctl --since "2026-01-01" --until "2026-01-02" | grep -i btrfs
+```
+
+**Kernel microcode events:**
+
+```bash
+journalctl -k | grep -i "microcode"
+```
+
+- `-k`: Show only kernel messages (equivalent to `dmesg` output via the journal).
 
 ## Fonts
 

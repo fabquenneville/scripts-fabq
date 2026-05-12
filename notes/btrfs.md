@@ -9,6 +9,7 @@
   - [Information on Filesystem](#information-on-filesystem)
   - [Drive Manipulation](#drive-manipulation)
     - [Replace Drives](#replace-drives)
+    - [Degraded Mount and Missing Device Removal](#degraded-mount-and-missing-device-removal)
   - [Filesystem Manipulation](#filesystem-manipulation)
     - [Upgrading Btrfs Block Group Cache to V2](#upgrading-btrfs-block-group-cache-to-v2)
     - [Defrag](#defrag)
@@ -19,6 +20,8 @@
     - [Delete Snapshots](#delete-snapshots)
   - [Backup Procedures](#backup-procedures)
   - [Recovery](#recovery)
+    - [Filesystem Check](#filesystem-check)
+    - [Diagnosis](#diagnosis)
 
 ## Placeholders
 
@@ -110,6 +113,7 @@ btrfs device usage <mountpoint>
 Scan all devices or a specific drive:
 
 ```bash
+btrfs device scan
 btrfs device scan <device>
 ```
 
@@ -120,6 +124,17 @@ Read errors, write errors, flush errors, etc.:
 ```bash
 btrfs device stats <mountpoint>
 ```
+
+**Reset Device Error Counters**
+
+Reset all per-device error counters to zero after acknowledging them:
+
+```bash
+btrfs device stats --reset <mountpoint>
+btrfs device stats -z <mountpoint>
+```
+
+- `-z` / `--reset`: Zeroes the counters after printing. Useful after a known event you've already investigated.
 
 **List BTRFS Subvolumes**
 
@@ -179,6 +194,28 @@ btrfs subvol list /
 mount -o subvolid=<subvolume-id> /dev/disk/by-uuid/<uuid> <mountpoint>
 ```
 
+**Mount Read-Only**
+
+Mount a partition in read-only mode, useful for forensics or recovery without risking further writes:
+
+```bash
+mount -r <device> <mountpoint>
+```
+
+**Remount with Performance Options**
+
+Apply common performance mount options to a live filesystem without unmounting:
+
+```bash
+mount -o remount,noatime,compress=zstd:3,autodefrag,space_cache=v2 <mountpoint>
+```
+
+**Remount with Default Options**
+
+```bash
+mount -o remount,defaults,noatime,compress=zstd:3 <mountpoint>
+```
+
 **Add a New Drive**
 
 ```bash
@@ -232,6 +269,33 @@ btrfs replace status -i <mountpoint>
 - `btrfs replace` works on a live mounted filesystem — no unmounting required.
 - Useful for both failing drive replacement and capacity upgrades.
 - Ensure the target drive has enough space to accommodate the source data.
+
+### Degraded Mount and Missing Device Removal
+
+Use when a drive has failed and you need to access the filesystem with the remaining devices.
+
+**Mount in degraded mode:**
+
+```bash
+mount -o ro,degraded <device> <mountpoint>
+```
+
+**Mount a specific subvolume in degraded mode:**
+
+```bash
+mount -t btrfs -o degraded,subvol=<subvolume>,noatime,compress=zstd:3 UUID=<uuid> <mountpoint>
+```
+
+**Remove the missing device from the filesystem:**
+
+Once mounted degraded, remove the placeholder for the missing drive:
+
+```bash
+btrfs device remove missing <mountpoint>
+```
+
+- This cleans up the missing device slot so the filesystem no longer expects it.
+- Only safe to run if data is intact on the remaining devices (e.g., RAID1 with one drive).
 
 ## Filesystem Manipulation
 
@@ -298,6 +362,8 @@ umount <mountpoint>
 
 ### Defrag
 
+**Standard recursive defrag with LZO compression:**
+
 ```bash
 btrfs filesystem defrag -r -v -clzo <mountpoint>
 ```
@@ -305,6 +371,18 @@ btrfs filesystem defrag -r -v -clzo <mountpoint>
 - `-r`: Recursive.
 - `-v`: Verbose.
 - `-clzo`: Optional LZO compression to save space.
+
+**Recursive defrag with Zstd compression, logged to file:**
+
+Runs in the background with unbuffered output so the log file updates in real time:
+
+```bash
+stdbuf -oL btrfs filesystem defrag -r -v -czstd <mountpoint> > /root/<date>-defrag.log 2>&1 &
+```
+
+- `stdbuf -oL`: Forces line-buffered stdout so log entries appear immediately.
+- `-czstd`: Zstd compression (better ratio than LZO, available since kernel 5.1).
+- `&`: Runs in the background; use `tail -f /root/<date>-defrag.log` to monitor.
 
 ## Balances
 
@@ -351,6 +429,14 @@ btrfs balance start --bg --full-balance -dusage=0 -musage=0 <mountpoint>
 btrfs balance start --bg -dlimit=100 <mountpoint>
 ```
 
+**Convert to RAID1:**
+
+Rebalances data and metadata to RAID1 profile. Use after adding a second drive or to switch from single to mirrored:
+
+```bash
+btrfs balance start -mconvert=raid1 -dconvert=raid1 <mountpoint>
+```
+
 **Cancel a balance:**
 
 ```bash
@@ -367,7 +453,7 @@ btrfs balance status <mountpoint>
 
 **Start a scrub**
 
-The scrub operation verifies data integrity against checksums
+The scrub operation verifies data integrity against checksums:
 
 ```bash
 btrfs scrub start <mountpoint>
@@ -383,6 +469,37 @@ btrfs scrub status <mountpoint>
 
 ```bash
 btrfs scrub cancel <mountpoint>
+```
+
+**Lower scrub I/O priority:**
+
+Reduce the impact of a running scrub on system I/O by setting it to idle class:
+
+```bash
+ionice -c 3 -p $(pgrep btrfs-scrub)
+```
+
+- `-c 3`: Idle class — only uses I/O when no other process needs it.
+
+**Watch scrub status and device stats:**
+
+Continuously display scrub progress and per-device error counters:
+
+```bash
+watch -n 10 "btrfs scrub status <mountpoint>; echo ''; btrfs device stats <mountpoint>"
+```
+
+**Watch scrub status and all drive temperatures:**
+
+```bash
+watch -n 5 "btrfs scrub status <mountpoint> && echo '' && \
+smartctl --scan | awk '{print \$1}' | while read dev; do \
+  echo -n \"\$dev: \"; \
+  smartctl -A \$dev | grep -iE 'Temperature|Airflow_Temp' | awk '\
+    /Temperature_Celsius/ {print \$10 \"°C\"} \
+    /Airflow_Temperature_Cel/ {print \$10 \"°C\"} \
+    /Temperature:/ {print \$2 \"°C\"}' | head -n 1; \
+done && echo '' && btrfs device stats <mountpoint>"
 ```
 
 ## Snapshots
@@ -476,3 +593,46 @@ btrfs scrub cancel <mountpoint>
    ```bash
    btrfs restore -D <device>
    ```
+
+### Filesystem Check
+
+Run offline consistency checks on an unmounted BTRFS filesystem.
+
+**Check an unmounted filesystem:**
+
+```bash
+btrfs check <device>
+```
+
+- Must be run on an **unmounted** device. Running on a mounted filesystem risks corruption.
+- Use the UUID path if needed: `/dev/disk/by-uuid/<uuid>`
+
+**Force check (use with caution):**
+
+```bash
+btrfs check --force <device>
+```
+
+- `--force`: Bypasses the mount check. Only use this if you are certain the filesystem is not mounted and understand the risks.
+
+### Diagnosis
+
+Filter system logs and kernel messages to diagnose BTRFS-related events.
+
+**Search journal logs by date range:**
+
+```bash
+journalctl --since "<date>" --until "<date>" | grep -i btrfs
+```
+
+Example:
+
+```bash
+journalctl --since "2026-01-01" --until "2026-01-02" | grep -i btrfs
+```
+
+**Search kernel ring buffer for BTRFS events:**
+
+```bash
+dmesg | grep -i btrfs
+```
