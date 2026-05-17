@@ -4,6 +4,7 @@
 import argparse
 import argcomplete
 import colorama
+import json
 import os
 import subprocess
 
@@ -17,39 +18,153 @@ cgreen = colorama.Fore.GREEN
 cred = colorama.Fore.RED
 
 
-def process_audio(file_path, track, command):
+def get_audio_metadata(file_path):
     """
-    Modify audio tracks of a video file based on the given command.
-    - 'remove': Remove the specified audio track while keeping everything else.
-    - 'keep': Keep only the specified audio track and remove all others.
-    The function preserves video, subtitles, and metadata.
+    Uses ffprobe to extract audio stream information.
+    Returns a list of dicts with track details.
     """
+    abs_file_path = os.path.abspath(file_path)
+    ffprobe_command = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "a",
+        "-show_entries",
+        "stream=index,codec_name:stream_tags=language,title",
+        "-of",
+        "json",
+        abs_file_path,
+    ]
+
+    try:
+        result = subprocess.run(
+            ffprobe_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+
+        if result.returncode != 0:
+            return None
+        metadata = json.loads(result.stdout)
+        return metadata.get("streams", [])
+    except Exception:
+        return None
+
+
+def list_audio_tracks(file_path):
+    """Displays all audio tracks in a video file."""
+    print(f"{ccyan}Analyzing tracks for: {file_path}{creset}")
+    streams = get_audio_metadata(file_path)
+
+    if streams is None:
+        print(f"{cred}  Failed to read file metadata.{creset}\n")
+        return
+    if not streams:
+        print(f"{cyellow}  No audio tracks found in this file.{creset}\n")
+        return
+
+    for audio_idx, stream in enumerate(streams):
+        abs_idx = stream.get("index")
+        codec = stream.get("codec_name", "unknown")
+        tags = stream.get("tags", {})
+        lang = tags.get("language", "und")
+        title = tags.get("title", "No Title")
+
+        print(
+            f"  {cgreen}[Audio Track {audio_idx}]{creset} "
+            f"Absolute Stream Index: {abs_idx} | "
+            f"Codec: {codec} | Lang: {lang} | Title: {title}"
+        )
+    print()
+
+
+def resolve_track_target(streams, target):
+    """
+    Resolves a track target (either an integer index string like '1'
+    or a language code string like 'eng') to a relative audio track index.
+    Returns None if no match is found.
+    """
+    # Case 1: Target is an explicit number (e.g., "0", "1")
+    if target.isdigit():
+        idx = int(target)
+        if 0 <= idx < len(streams):
+            return idx
+        return None
+
+    # Case 2: Target is a language code (e.g., "eng", "rus")
+    for audio_idx, stream in enumerate(streams):
+        lang = stream.get("tags", {}).get("language", "").lower()
+        if lang == target.lower():
+            return audio_idx
+
+    return None
+
+
+def process_audio(file_path, track_target, command):
+    """Modify or list audio tracks of a video file."""
+    if command == "list":
+        list_audio_tracks(file_path)
+        return
+
+    streams = get_audio_metadata(file_path)
+    if not streams:
+        print(f"{cred}Skipping {file_path}: Could not parse audio streams.{creset}\n")
+        return
+
+    # Dynamic target resolution (converts 'eng' or '1' to the proper track index)
+    resolved_track = resolve_track_target(streams, track_target)
+
+    if resolved_track is None:
+        print(
+            f"{cyellow}Skipping {file_path}: Target audio track/language '{track_target}' not found.{creset}\n"
+        )
+        return
+
     print(f"{cgreen}Processing file: {file_path}{creset}")
+    print(
+        f"-> Target resolved to Audio Track {resolved_track} based on '{track_target}'"
+    )
+
     output_file = f"{os.path.splitext(file_path)[0]}_{command}_audio{os.path.splitext(file_path)[1]}"
 
-    # Construct ffmpeg command based on user choice
     if command == "remove":
         # Remove only the specified audio track while keeping all other streams
         ffmpeg_command = [
-            "ffmpeg", "-i", file_path, "-map", "0", "-map", f"-0:a:{track}",
-            "-c", "copy", output_file
+            "ffmpeg",
+            "-i",
+            file_path,
+            "-map",
+            "0",
+            "-map",
+            f"-0:a:{resolved_track}",
+            "-c",
+            "copy",
+            output_file,
         ]
     elif command == "keep":
         # Keep only the specified audio track while preserving video, subtitles, and metadata
         ffmpeg_command = [
-            "ffmpeg", "-i", file_path, "-map", "0:v", "-map", f"0:a:{track}",
-            "-map", "0:s?", "-map", "0:t?", "-c", "copy", output_file
+            "ffmpeg",
+            "-i",
+            file_path,
+            "-map",
+            "0:v",
+            "-map",
+            f"0:a:{resolved_track}",
+            "-map",
+            "0:s?",
+            "-map",
+            "0:t?",
+            "-c",
+            "copy",
+            output_file,
         ]
     else:
-        print(f"{cred}Invalid command: {command}{creset}")
         return
 
     try:
-        # Execute the ffmpeg command and capture output
-        result = subprocess.run(ffmpeg_command,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                text=True)
+        result = subprocess.run(
+            ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
 
         if result.returncode == 0:
             print(
@@ -61,20 +176,17 @@ def process_audio(file_path, track, command):
             )
             print(f"{cred}Error output:\n{result.stderr}{creset}\n")
 
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         print(f"{cred}Error processing audio: {e}{creset}\n")
 
 
-def process_directory(dir_path, track, command):
-    """
-    Recursively processes all video files in the specified directory.
-    Applies the chosen audio modification (remove or keep) to each file.
-    """
+def process_directory(dir_path, track_target, command):
+    """Recursively processes all video files in the specified directory."""
     for root, _, files in os.walk(dir_path):
         for file in files:
             if file.endswith((".mp4", ".mkv", ".avi", ".mov")):
                 file_path = os.path.join(root, file)
-                process_audio(file_path, track, command)
+                process_audio(file_path, track_target, command)
 
 
 def main():
@@ -82,37 +194,31 @@ def main():
     Main function to parse command-line arguments and initiate the audio processing.
     """
 
-    # Create argument parser
     parser = argparse.ArgumentParser(
-        description="Manage audio tracks in video files.")
+        description="Manage or list audio tracks in video files dynamically."
+    )
 
-    # Define command line arguments
-    # Add a positional argument for the command
-    parser.add_argument('command',
-                        choices=['remove', 'keep'],
-                        help='Command to run')
+    parser.add_argument(
+        "command", choices=["remove", "keep", "list"], help="Command to run"
+    )
 
-    # Add other arguments with both short and long options, including defaults
-    parser.add_argument("-t",
-                        "--track",
-                        type=int,
-                        default=0,
-                        help="Audio track index (default is 0).")
-    parser.add_argument("-f",
-                        "--file",
-                        type=str,
-                        help="Path to a specific video file.")
+    parser.add_argument(
+        "-t",
+        "--track",
+        type=str,
+        default="0",
+        help="Audio track index (e.g., 0, 1) OR language ISO code (e.g., eng, rus). Default is '0'.",
+    )
+    parser.add_argument("-f", "--file", type=str, help="Path to a specific video file.")
     parser.add_argument(
         "-d",
         "--dir",
         type=str,
         default=os.getcwd(),
-        help="Directory to process (default is current directory).")
+        help="Directory to process (default is current directory).",
+    )
 
-    # Enable autocomplete for command-line arguments
     argcomplete.autocomplete(parser)
-
-    # Parse command line arguments
     args = parser.parse_args()
 
     # Process a single file if provided, otherwise process a directory
