@@ -10,7 +10,7 @@ This repository is structured into several key directories:
   - `scripts/library/`: Libraries used by Python scripts.
     - `venv_utils.py`: Utility functions for creating, activating, and managing Python virtual environments.
   - `change_case.py`: A script for renaming files and directories by changing their case.
-  - `update-efi-mirror.sh`: Script for syncing a two drive EFI mirror.
+  - `efi-update-mirror.sh`: Script for syncing a two drive EFI mirror.
   - `video_autoreduce.py`: A script for automatic resolution reduction of video files.
   - `video_autoreduce_rename.py`: A script for automated renaming of video files post resolution reduction.
   - `video_manage_audio.py`: A script for removing audio from video files.
@@ -23,13 +23,13 @@ This repository is structured into several key directories:
   - `debian-packaging.md`: Building and maintaining Debian packages.
   - `dns.md`: DNS configuration and troubleshooting.
   - `efi-repair.md`: EFI partition repair guide.
+  - `efi-update-mirror.md`: Redundant root with EFI mirror setup guide.
   - `linux.md`: General Linux commands — users, system management, archiving, and diagnostics.
   - `pdf.md`: PDF manipulation with Linux command line.
   - `pdftk.md`: PDF Toolkit usage.
   - `pip-packaging.md`: Packaging and publishing Python projects with pip.
   - `ssh.md`: SSH configuration, key management, and tunneling tips.
   - `storage.md`: Storage tooling — smartctl, badblocks, dd, hdparm, fdisk, and fstab/mount management.
-  - `update-efi-mirror.md`: Redundant root with EFI mirror setup guide.
   - `wordpress.md`: WordPress debugging and tips.
 
 - **pages/other/**: Templates for other pages, such as the homepage of my Debian package repository. These are provided as inspiration and should not be used as-is.
