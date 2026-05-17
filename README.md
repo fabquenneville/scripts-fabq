@@ -15,6 +15,7 @@ This repository is structured into several key directories:
   - `video_autoreduce_rename.py`: A script for automated renaming of video files post resolution reduction.
   - `video_manage_audio.py`: A script for removing audio from video files.
   - `video_manage_subtitles.py`: A script for removing subtitles from video files.
+  - `video_repackage_mkv.py`: Recursively repackage non-MKV video files into Matroska containers.
 
 - **notes/**: A collection of markdown files containing notes on various topics, including:
   - `brother.md`: Brother printer setup and troubleshooting on Linux.
