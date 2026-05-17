@@ -22,6 +22,7 @@ This repository is structured into several key directories:
   - `chrome-driver.md`: ChromeDriver setup and usage.
   - `debian-packaging.md`: Building and maintaining Debian packages.
   - `dns.md`: DNS configuration and troubleshooting.
+  - `efi-repair.md`: EFI partition repair guide.
   - `linux.md`: General Linux commands — users, system management, archiving, and diagnostics.
   - `pdf.md`: PDF manipulation with Linux command line.
   - `pdftk.md`: PDF Toolkit usage.
