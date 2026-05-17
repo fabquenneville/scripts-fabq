@@ -435,6 +435,18 @@ exportfs -v
 
 ## Network Diagnostics
 
+**List network interfaces**
+
+```bash
+ip link show
+```
+
+**List network bridges and their attached interfaces**
+
+```bash
+brctl show
+```
+
 **Measure HTTP response timing:**
 
 Breaks down the full request lifecycle — useful for diagnosing DNS, TLS, or TTFB issues:
