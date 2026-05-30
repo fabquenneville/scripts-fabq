@@ -30,7 +30,13 @@ def autorename(input_path, max_height=720, debug=False):
     resolution_patterns = {
         2160: r'(4096x2160|3840x2160|2880p|2160p|2160|1440p|4k)',
         1080: r'(1920x1080|1080p|1080)',
-        720: r'(1280x720|720p|720)',
+        720:  r'(1280x720|720p|720)',
+    }
+
+    # Wrap each pattern to only match when isolated by non-alphanumeric chars or string boundaries
+    resolution_patterns = {
+        res: rf'(?<![a-zA-Z0-9]){pat}(?![a-zA-Z0-9])'
+        for res, pat in resolution_patterns.items()
     }
 
     files_to_rename = []
