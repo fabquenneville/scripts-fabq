@@ -99,6 +99,27 @@ def deletefile(filepath):
     return True
 
 
+def user_confirm(message, color="yellow"):
+    """
+    Prompt the user for a yes/no confirmation.
+
+    Args:
+        message (str): The confirmation message to display.
+        color (str): Color for the prompt ('yellow', 'red', 'green'). Default is 'yellow'.
+
+    Returns:
+        bool: True if the user confirms with 'Y', False otherwise.
+    """
+    color_map = {
+        "yellow": cyellow,
+        "red": cred,
+        "green": cgreen,
+    }
+    c = color_map.get(color, cyellow)
+    response = input(f"{c}{message}{creset} ").strip().upper()
+    return response == "Y"
+
+
 def ensure_output_path(output_path):
     """
     Ensure that the output directory exists. If it doesn't, attempt to create it.
@@ -231,6 +252,7 @@ def find_videos_to_convert(input_path, max_height=720, debug=False):
 
             # Attempt to decode the output using different encodings
             dimensions_str = None
+            width = height = None
             for encoding in ENCODINGS_TO_TRY:
                 try:
                     dimensions_str = (
@@ -249,6 +271,15 @@ def find_videos_to_convert(input_path, max_height=720, debug=False):
                     break  # Stop trying encodings once successful decoding and conversion
                 except (UnicodeDecodeError, ValueError):
                     continue  # Try the next encoding
+
+            # If decoding was unsuccessful with all encodings, skip this video
+            if width is None or height is None:
+                if debug:
+                    print(
+                        f"{cred}Error processing {video_file}: Unable to decode dimensions from ffprobe output.{creset}",
+                        file=sys.stderr,
+                    )
+                continue
 
             # If decoding was unsuccessful with all encodings, skip this video
             if dimensions_str is None:
@@ -294,14 +325,18 @@ def find_videos_to_convert(input_path, max_height=720, debug=False):
     return valid_videos_files
 
 
-def convert_videos(input_path, output_path, max_height=720, debug=False):
+def convert_videos(
+    input_path, output_path=None, max_height=720, delete=False, debug=False
+):
     """
     Convert videos taller than a specified height to 720p resolution with x265 encoding and MKV container.
 
     Args:
         input_path (str): The path of the directory containing input video files.
-        output_path (str): The path of the directory where converted video files will be saved.
+        output_path (str, optional): The path of the directory where converted video files will be saved.
+                                     If None, output files are written alongside the originals (in-place).
         max_height (int, optional): The maximum height (in pixels) of the video to consider for conversion. Default is 720.
+        delete (bool, optional): If True, delete the original file after successful conversion. Default is False.
         debug (bool, optional): If True, print debug messages. Default is False.
 
     Returns:
@@ -320,12 +355,13 @@ def convert_videos(input_path, output_path, max_height=720, debug=False):
         print(f"No video files to convert found.\n")
         return False
 
-    # Ensure the output directory exists
-    ensure_output_path(output_path)
+    # Ensure the fixed output directory exists (only when output_path is set)
+    if output_path:
+        ensure_output_path(output_path)
 
     # Print a message indicating the start of the conversion process
     print(
-        f"Converting {len(video_files)} videos taller than {max_height} pixels to 720p resolution with x265 encoding and MKV container...\n"
+        f"Converting {len(video_files)} videos taller than {max_height} pixels to {max_height}p resolution with x265 encoding and MKV container...\n"
     )
 
     # Variable to keep a track of the current_file in case of failure
@@ -342,10 +378,16 @@ def convert_videos(input_path, output_path, max_height=720, debug=False):
         print(f"{ccyan}Original file:{creset}")
         print(video_file)
 
+        # Determine output directory: fixed path, or same dir as the source file
+        effective_output_path = (
+            output_path if output_path else os.path.dirname(video_file)
+        )
+
         # Generate output file path and name
         output_file = findfreename(
             os.path.join(
-                output_path, os.path.splitext(os.path.basename(video_file))[0] + ".mkv"
+                effective_output_path,
+                os.path.splitext(os.path.basename(video_file))[0] + ".mkv",
             )
         )
 
@@ -481,23 +523,28 @@ def convert_videos(input_path, output_path, max_height=720, debug=False):
             except PermissionError:
                 print(f"{cred}PermissionError on: '{output_file}'{creset}")
 
-            # Remove the now succefully converted filepath
+            # Delete the original file if requested
+            if delete:
+                deletefile(video_file)
+
+            # Remove the now successfully converted filepath
             current_file = None
 
     return True
 
 
-def main():
+def parse_args():
     """
-    Main function to parse command line arguments and initiate video conversion.
+    Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed arguments.
     """
 
-    # Create argument parser
     parser = argparse.ArgumentParser(
         description="Convert videos taller than a certain height to 720p resolution with x265 encoding and MKV container."
     )
 
-    # Define command line arguments
     parser.add_argument(
         "input_path",
         nargs="?",
@@ -507,8 +554,8 @@ def main():
     parser.add_argument(
         "-o",
         "--output-path",
-        default=os.path.join(os.getcwd(), "converted"),
-        help="directory path to save converted videos (default: ./converted)",
+        default=None,
+        help="directory path to save converted videos (default: ./converted, or alongside originals with --delete)",
     )
     parser.add_argument(
         "-mh",
@@ -516,6 +563,18 @@ def main():
         type=int,
         default=720,
         help="maximum height of videos to be converted (default: 720)",
+    )
+    parser.add_argument(
+        "-del",
+        "--delete",
+        action="store_true",
+        help="delete original files after successful conversion",
+    )
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="skip confirmation prompts",
     )
     parser.add_argument(
         "--debug",
@@ -526,11 +585,35 @@ def main():
     # Enable autocomplete for argparse
     argcomplete.autocomplete(parser)
 
-    # Parse command line arguments
     args = parser.parse_args()
 
+    if args.output_path is None and not args.delete:
+        args.output_path = os.path.join(os.getcwd(), "converted")
+
+    # Warn and confirm if --delete is active
+    if args.delete:
+        print(f"{cyellow}WARNING: Delete option selected!{creset}")
+        if not args.yes and not user_confirm(
+            "Are you sure you wish to delete original files after successful conversion? [Y/N] ?",
+            color="yellow",
+        ):
+            print(f"{cgreen}Exiting!{creset}")
+            exit()
+
+    return args
+
+
+def main():
+    """
+    Main function to parse command line arguments and initiate video conversion.
+    """
+
+    args = parse_args()
+
     # Convert videos
-    convert_videos(args.input_path, args.output_path, args.max_height, args.debug)
+    convert_videos(
+        args.input_path, args.output_path, args.max_height, args.delete, args.debug
+    )
 
 
 if __name__ == "__main__":
