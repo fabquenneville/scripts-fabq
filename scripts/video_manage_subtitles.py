@@ -32,20 +32,48 @@ def process_subtitles(file_path, track, command):
     if command == "remove":
         # Remove only the specified subtitle track while keeping all other streams
         ffmpeg_command = [
-            "ffmpeg", "-i", file_path, "-map", "0", "-map", f"-0:s:{track}",
-            "-c", "copy", output_file
+            "ffmpeg",
+            "-i",
+            file_path,
+            "-map",
+            "0",
+            "-map",
+            f"-0:s:{track}",
+            "-c",
+            "copy",
+            output_file,
         ]
     elif command == "keep":
         # Keep only the specified subtitle track while preserving video, audio, and metadata
         ffmpeg_command = [
-            "ffmpeg", "-i", file_path, "-map", "0:v", "-map", "0:a", "-map",
-            f"0:s:{track}", "-map", "0:t?", "-c", "copy", output_file
+            "ffmpeg",
+            "-i",
+            file_path,
+            "-map",
+            "0:v",
+            "-map",
+            "0:a",
+            "-map",
+            f"0:s:{track}",
+            "-map",
+            "0:t?",
+            "-c",
+            "copy",
+            output_file,
         ]
     elif command == "none":
         # Remove all subtitle tracks
         ffmpeg_command = [
-            "ffmpeg", "-i", file_path, "-map", "0", "-map", "-0:s", "-c",
-            "copy", output_file
+            "ffmpeg",
+            "-i",
+            file_path,
+            "-map",
+            "0",
+            "-map",
+            "-0:s",
+            "-c",
+            "copy",
+            output_file,
         ]
     else:
         print(f"{cred}Invalid command: {command}{creset}")
@@ -53,10 +81,9 @@ def process_subtitles(file_path, track, command):
 
     try:
         # Execute the ffmpeg command and capture output
-        result = subprocess.run(ffmpeg_command,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                text=True)
+        result = subprocess.run(
+            ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
 
         if result.returncode == 0:
             print(
@@ -91,13 +118,16 @@ def main():
 
     # Create argument parser
     parser = argparse.ArgumentParser(
-        description="Manage subtitle tracks in video files.")
+        description="Manage subtitle tracks in video files."
+    )
 
     # Define command line arguments
     # Add a positional argument for the command
-    parser.add_argument('command',
-                        choices=['remove', 'keep', 'none'],
-                        help='Command to run (remove, keep, or none)')
+    parser.add_argument(
+        "command",
+        choices=["remove", "keep", "none"],
+        help="Command to run (remove, keep, or none)",
+    )
 
     # Add other arguments with both short and long options, including defaults
     parser.add_argument(
@@ -105,19 +135,16 @@ def main():
         "--track",
         type=int,
         default=0,
-        help=
-        "Subtitle track index (default is 0). Use 'none' to remove all subtitles."
+        help="Subtitle track index (default is 0). Use 'none' to remove all subtitles.",
     )
-    parser.add_argument("-f",
-                        "--file",
-                        type=str,
-                        help="Path to a specific video file.")
+    parser.add_argument("-f", "--file", type=str, help="Path to a specific video file.")
     parser.add_argument(
         "-d",
         "--dir",
         type=str,
         default=os.getcwd(),
-        help="Directory to process (default is current directory).")
+        help="Directory to process (default is current directory).",
+    )
 
     # Enable autocomplete for command-line arguments
     argcomplete.autocomplete(parser)
