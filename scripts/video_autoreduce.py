@@ -9,6 +9,20 @@ import re
 import subprocess
 import sys
 import json
+from pathlib import Path
+
+# Allow importing from scripts/library even when run directly
+project_root = str(Path(__file__).resolve().parent.parent)
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+# === Local import ===
+from scripts.library import (
+    deletefile,
+    findfreename,
+    apply_resolution_rename,
+    get_intermediate_dirs,
+)
 
 colorama.init()
 
@@ -17,6 +31,8 @@ ccyan = colorama.Fore.CYAN
 cyellow = colorama.Fore.YELLOW
 cgreen = colorama.Fore.GREEN
 cred = colorama.Fore.RED
+
+VIDEO_EXTENSIONS = (".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".divx")
 
 
 def get_ffmpeg_codecs(codec_type="S"):
@@ -55,48 +71,6 @@ def get_ffmpeg_codecs(codec_type="S"):
     except subprocess.CalledProcessError as e:
         print("Error running ffmpeg:", e)
         return set()
-
-
-def findfreename(filepath, attempt=0):
-    """
-    Given a filepath, it will try to find a free filename by appending a number to the name.
-    First, it tries using the filepath passed in the argument, then adds a number to the end. If all fail, it appends (#).
-
-    Args:
-        filepath (str): A string containing the full filepath.
-        attempt (int): The number of attempts already made to find a free filename.
-
-    Returns:
-        str: The first free filepath found.
-    """
-    attempt += 1
-    filename = str(filepath)[: str(filepath).rindex(".")]
-    extension = str(filepath)[str(filepath).rindex(".") :]
-    copynumpath = filename + f"({attempt})" + extension
-
-    if not os.path.exists(filepath) and attempt <= 2:
-        return filepath
-    elif not os.path.exists(copynumpath):
-        return copynumpath
-    return findfreename(filepath, attempt)
-
-
-def deletefile(filepath):
-    """Delete a file, Returns a boolean
-
-    Args:
-        filepath    :   A string containing the full filepath
-    Returns:
-        Bool        :   The success of the operation
-    """
-    try:
-        os.remove(filepath)
-    except OSError:
-        print(f"{cred}Error deleting {filepath}{creset}")
-        return False
-
-    print(f"{cgreen}Successfully deleted {filepath}{creset}")
-    return True
 
 
 def user_confirm(message, color="yellow"):
@@ -222,9 +196,7 @@ def find_videos_to_convert(input_path, max_height=720, debug=False):
         for file in files:
             fullpath = os.path.join(root, file)
             # Check if the file is a video file with one of the specified extensions
-            if file.lower().endswith(
-                (".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".divx")
-            ) and os.path.isfile(fullpath):
+            if file.lower().endswith(VIDEO_EXTENSIONS) and os.path.isfile(fullpath):
                 video_files.append(fullpath)
 
     # List of encodings to try for decoding output from ffprobe
@@ -326,7 +298,12 @@ def find_videos_to_convert(input_path, max_height=720, debug=False):
 
 
 def convert_videos(
-    input_path, output_path=None, max_height=720, delete=False, debug=False
+    input_path,
+    output_path=None,
+    max_height=720,
+    delete=False,
+    rename=False,
+    debug=False,
 ):
     """
     Convert videos taller than a specified height to 720p resolution with x265 encoding and MKV container.
@@ -337,6 +314,7 @@ def convert_videos(
                                      If None, output files are written alongside the originals (in-place).
         max_height (int, optional): The maximum height (in pixels) of the video to consider for conversion. Default is 720.
         delete (bool, optional): If True, delete the original file after successful conversion. Default is False.
+        rename (bool, optional): If True, rename files and intermediate folders to reflect the target resolution. Default is False.
         debug (bool, optional): If True, print debug messages. Default is False.
 
     Returns:
@@ -367,6 +345,9 @@ def convert_videos(
     # Variable to keep a track of the current_file in case of failure
     current_file = None
 
+    # Track successfully converted original paths (used for folder rename pass)
+    converted_files = set()
+
     # Iterate through each video file for conversion
     for video_file in video_files:
         counter += 1
@@ -383,12 +364,18 @@ def convert_videos(
             output_path if output_path else os.path.dirname(video_file)
         )
 
-        # Generate output file path and name
+        # Compute base output filename, applying resolution rename if requested
+        base_name = os.path.splitext(os.path.basename(video_file))[0]
+        if rename:
+            renamed_base = apply_resolution_rename(base_name, max_height)
+            if renamed_base == base_name and f"{max_height}p" not in renamed_base:
+                # No resolution found in filename: append .{max_height}p before extension
+                renamed_base = f"{base_name}.{max_height}p"
+            base_name = renamed_base
+
+        # Generate output file path, using findfreename to avoid conflicts
         output_file = findfreename(
-            os.path.join(
-                effective_output_path,
-                os.path.splitext(os.path.basename(video_file))[0] + ".mkv",
-            )
+            os.path.join(effective_output_path, base_name + ".mkv")
         )
 
         try:
@@ -527,8 +514,51 @@ def convert_videos(
             if delete:
                 deletefile(video_file)
 
+            # Track this original and its converted output as successfully converted
+            converted_files.add(os.path.realpath(video_file))
+            converted_files.add(os.path.realpath(output_file))
+
             # Remove the now successfully converted filepath
             current_file = None
+
+    # Folder rename second pass
+    if rename and converted_files:
+        # Collect all intermediate dirs touched by successful conversions, deepest first
+        dirs_to_consider = {}
+        for original_file in converted_files:
+            for d in get_intermediate_dirs(input_path, original_file):
+                dirs_to_consider[d] = True
+
+        # For each candidate dir, check that ALL video files under it were converted
+        dirs_to_rename = []
+        for d in sorted(dirs_to_consider, key=len, reverse=True):
+            all_converted = True
+            for root, _, files in os.walk(d):
+                for f in files:
+                    if f.lower().endswith(VIDEO_EXTENSIONS):
+                        fpath = os.path.realpath(os.path.join(root, f))
+                        if fpath not in converted_files:
+                            all_converted = False
+                            break
+                if not all_converted:
+                    break
+
+            if all_converted:
+                new_dirname = apply_resolution_rename(os.path.basename(d), max_height)
+                if new_dirname != os.path.basename(d):
+                    new_dir = os.path.join(os.path.dirname(d), new_dirname)
+                    dirs_to_rename.append((d, new_dir))
+
+        # Rename dirs deepest first to avoid breaking paths
+        for old_dir, new_dir in dirs_to_rename:
+            if os.path.exists(new_dir):
+                print(
+                    f"{cred}Error: Target directory {new_dir} already exists, skipping rename.{creset}"
+                )
+                continue
+            os.rename(old_dir, new_dir)
+            if debug:
+                print(f"Renamed directory: {old_dir} -> {new_dir}")
 
     return True
 
@@ -577,6 +607,12 @@ def parse_args():
         help="skip confirmation prompts",
     )
     parser.add_argument(
+        "-r",
+        "--rename",
+        action="store_true",
+        help="rename converted files and intermediate folders to reflect the target resolution",
+    )
+    parser.add_argument(
         "--debug",
         action="store_true",
         help="enable debug mode for printing additional error messages",
@@ -612,7 +648,12 @@ def main():
 
     # Convert videos
     convert_videos(
-        args.input_path, args.output_path, args.max_height, args.delete, args.debug
+        args.input_path,
+        args.output_path,
+        args.max_height,
+        args.delete,
+        args.rename,
+        args.debug,
     )
 
 
