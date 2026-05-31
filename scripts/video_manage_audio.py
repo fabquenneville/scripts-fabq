@@ -7,6 +7,16 @@ import colorama
 import json
 import os
 import subprocess
+import sys
+from pathlib import Path
+
+# Allow importing from scripts/library even when run directly
+project_root = str(Path(__file__).resolve().parent.parent)
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
+# === Local import ===
+from scripts.library import deletefile
 
 # Initialize colorama for colored output in the terminal
 colorama.init()
@@ -162,6 +172,9 @@ def process_audio(file_path, track_target, command):
         return
 
     try:
+        # Keep a track of the current_file in case of failure
+        current_file = output_file
+
         result = subprocess.run(
             ffmpeg_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
@@ -175,6 +188,21 @@ def process_audio(file_path, track_target, command):
                 f"{cred}Command failed with return code {result.returncode}{creset}\n"
             )
             print(f"{cred}Error output:\n{result.stderr}{creset}\n")
+
+    except subprocess.CalledProcessError as e:
+        # If we have a partial video converted, delete it due to the failure
+        if current_file:
+            deletefile(current_file)
+
+    except KeyboardInterrupt:
+        print(f"{cyellow}Conversions cancelled, cleaning up...{creset}")
+
+        # If we have a partial video converted, delete it due to the failure
+        if current_file:
+            deletefile(current_file)
+            current_file = None
+
+        exit()
 
     except Exception as e:
         print(f"{cred}Error processing audio: {e}{creset}\n")
