@@ -4,7 +4,6 @@
 import sys
 import os
 from pathlib import Path
-from typing import Optional
 from argparse import ArgumentParser, Namespace
 
 # Allow importing from scripts/library even when run directly
