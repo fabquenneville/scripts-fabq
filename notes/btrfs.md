@@ -52,6 +52,7 @@ Most `btrfs` subcommands accept shortened aliases. The table below lists the com
 | `btrfs filesystem resize`     | `btrfs fi resize`       |
 | `btrfs filesystem defragment` | `btrfs fi defrag`       |
 | `btrfs subvolume`             | `btrfs sub`             |
+| `btrfs subvolume create`      | `btrfs sub create`      |
 | `btrfs subvolume list`        | `btrfs sub list`        |
 | `btrfs subvolume snapshot`    | `btrfs sub snap`        |
 | `btrfs subvolume delete`      | `btrfs sub del`         |

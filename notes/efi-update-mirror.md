@@ -19,7 +19,7 @@
 
 ## Overview
 
-This setup provides a redundant Debian root drive using BTRFS RAID1 across two disks, with a synced EFI partition on both so the machine can boot from either. The script `update-efi-mirror` keeps the backup EFI in sync and re-installs GRUB on both physical disks. It is triggered automatically after every `apt` operation.
+This setup provides a redundant Debian root drive using BTRFS RAID1 across two disks, with a synced EFI partition on both so the machine can boot from either. The script `efi-update-mirror` keeps the backup EFI in sync and re-installs GRUB on both physical disks. It is triggered automatically after every `apt` operation.
 
 ## Placeholders
 
@@ -46,15 +46,15 @@ Replace the placeholders below with the appropriate values for your setup:
 
 - The root filesystem is BTRFS RAID1 across two partitions. Either disk alone can serve reads and writes.
 - Each disk has its own EFI partition. GRUB is installed on both physical disks.
-- After every `apt` install or upgrade, an apt hook calls `update-efi-mirror`, which:
+- After every `apt` install or upgrade, an apt hook calls `efi-update-mirror`, which:
   1. Rsyncs the live `/boot/efi` to the backup EFI partition.
   2. Runs `grub-install` on both physical disks.
 - Either disk can be removed and the system will still boot and run.
 
 ## Paths
 
-- **Sync script**: `/usr/local/sbin/update-efi-mirror`
-- **Apt hook**: `/etc/apt/apt.conf.d/99-update-efi-mirror`
+- **Sync script**: `/usr/local/sbin/efi-update-mirror`
+- **Apt hook**: `/etc/apt/apt.conf.d/99-efi-update-mirror`
 - **fstab**: `/etc/fstab`
 
 ## Setup Procedure
@@ -176,7 +176,7 @@ The fstab should contain:
 # Primary EFI — mounted at boot
 UUID=<primary-efi-uuid>  /boot/efi  vfat  umask=0077  0  1
 
-# Backup EFI — not auto-mounted, used by update-efi-mirror
+# Backup EFI — not auto-mounted, used by efi-update-mirror
 #UUID=<backup-efi-uuid> /boot/efi vfat umask=0077 0 1
 
 # Root — BTRFS RAID1 (both partitions share the same UUID)
@@ -204,16 +204,16 @@ systemctl daemon-reload
 **Create the script**
 
 ```bash
-nano /usr/local/sbin/update-efi-mirror
+nano /usr/local/sbin/efi-update-mirror
 ```
 
-Paste the contents of `update-efi-mirror.sh`.
+Paste the contents of `efi-update-mirror.sh`.
 
 **Set ownership and permissions**
 
 ```bash
-chown root:root /usr/local/sbin/update-efi-mirror
-chmod 755 /usr/local/sbin/update-efi-mirror
+chown root:root /usr/local/sbin/efi-update-mirror
+chmod 755 /usr/local/sbin/efi-update-mirror
 ```
 
 The script will:
@@ -228,13 +228,13 @@ The script will:
 **Create the apt hook**
 
 ```bash
-nano /etc/apt/apt.conf.d/99-update-efi-mirror
+nano /etc/apt/apt.conf.d/99-efi-update-mirror
 ```
 
 Add:
 
 ```
-DPkg::Post-Invoke {"if [ -x /usr/local/sbin/update-efi-mirror ]; then /usr/local/sbin/update-efi-mirror; fi";};
+DPkg::Post-Invoke {"if [ -x /usr/local/sbin/efi-update-mirror ]; then /usr/local/sbin/efi-update-mirror; fi";};
 ```
 
 This runs the sync script after every `apt` operation that invokes `dpkg` — including kernel upgrades, which update `/boot/efi` with new initramfs and GRUB config.
@@ -244,7 +244,7 @@ This runs the sync script after every `apt` operation that invokes `dpkg` — in
 **Run the script manually**
 
 ```bash
-/usr/local/sbin/update-efi-mirror
+/usr/local/sbin/efi-update-mirror
 ```
 
 Expected output:
@@ -328,7 +328,7 @@ systemctl daemon-reload
 **7. Run the sync script** to install GRUB on the new disk and populate its EFI partition:
 
 ```bash
-/usr/local/sbin/update-efi-mirror
+/usr/local/sbin/efi-update-mirror
 ```
 
 **8. Verify** following [Step 6](#6-test).

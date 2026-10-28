@@ -5,6 +5,7 @@
 - [PDF](#pdf)
   - [Table of Contents](#table-of-contents)
   - [OCR](#ocr)
+  - [ocrmypdf](#ocrmypdf)
 
 ## OCR
 
@@ -102,3 +103,9 @@ Replace `convert` with `magick` for newer versions.
 
 **Verify language codes for Tesseract**:  
  You can find a list of supported languages on the [Tesseract GitHub page](https://github.com/tesseract-ocr/tesseract).
+
+## ocrmypdf
+
+```bash
+ocrmypdf "input.pdf" "output.ocr.pdf" --force-ocr
+```

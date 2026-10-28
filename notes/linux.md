@@ -285,6 +285,12 @@ ln -s /usr/share/zoneinfo/<timezone> /etc/localtime
 systemctl list-units --type=service | grep <service-name>
 ```
 
+**Mount drive by UUID**
+
+```bash
+mount -U "UUID" /mnt/path
+```
+
 **Bind mount a directory**
 
 Make a directory available at another path, useful during chroot recovery or container setup:
