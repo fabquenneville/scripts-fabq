@@ -17,7 +17,7 @@ Ensure that you have the necessary tools (`python3-setuptools`, `python3-wheel`,
 
 ```bash
 apt update
-apt install python3-setuptools python3-wheel twine
+apt install python3-setuptools python3-build python3-wheel twine
 ```
 
 ## Credentials
@@ -35,7 +35,7 @@ Ensure you have the correct tokens and repository configurations in this file if
 Navigate to your project directory (where `setup.py` is located) and build the distribution files. This will generate both a source distribution and a wheel.
 
 ```bash
-python3 setup.py sdist bdist_wheel
+python3 -m build
 ```
 
 The above command will create a `dist/` folder containing `.tar.gz` and `.whl` files.
@@ -47,13 +47,14 @@ The above command will create a `dist/` folder containing `.tar.gz` and `.whl` f
 To upload your package to Test PyPI (a test environment that mirrors the real PyPI), use the following command:
 
 ```bash
-twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+twine upload -r testpypi dist/*
 ```
 
 You can also specify a particular version of your package:
 
 ```bash
-twine upload --repository-url https://test.pypi.org/legacy/ dist/MediaCurator-0.0.10*
+twine upload -r testpypi dist/MediaCurator-0.0.10*
 ```
 
 You can also specify the repository from ~/.pypirc:

@@ -65,7 +65,7 @@ mkdir debian
 mkdir debian/source
 ```
 
-**4. Create changelog**
+**4. Create or append changelog**
 Initialize the changelog file with your package version. Make sure to follow Debian formatting standards (`package (version) distribution; urgency=urgency-level`):
 
 ```bash
@@ -80,6 +80,10 @@ mediacurator (1.0.1-1) unstable; urgency=medium
   * Initial release
 
  -- Fabrice Quenneville <fabrice@fabq.ca>  Wed, 23 Oct 2024 10:00:00 +0000
+```
+
+```bash
+dch -v 1.0.2-1 "New upstream release, refactor with new codecs and delete options."
 ```
 
 **5. Create control files**
@@ -137,7 +141,13 @@ lintian
 
 This step ensures your package complies with Debian policy.
 
-**10. Build the package**
+**10. Install build tools**
+
+```bash
+apt build-dep .
+```
+
+**11. Build the package**
 
 Finally, build your Debian package:
 
@@ -145,7 +155,7 @@ Finally, build your Debian package:
 debuild -us -uc
 ```
 
-**11. Test the package**
+**12. Test the package**
 After building, you can test the package by installing it:
 
 **With `dpkg`**
